@@ -265,6 +265,8 @@ function renderAppendixCard(page) {
 }
 
 // --- TOC ---
+let tocObserver = null;
+
 window.scrollToHeading = function(id, event) {
   if (event) {
     event.preventDefault();
@@ -279,6 +281,13 @@ window.scrollToHeading = function(id, event) {
          top: offsetPosition,
          behavior: "smooth"
     });
+    
+    // Manually update active class since observer might take time
+    document.querySelectorAll('.toc-item').forEach(item => item.classList.remove('active'));
+    const targetItem = document.querySelector(`.toc-item[data-target="${id}"]`);
+    if (targetItem) {
+      targetItem.classList.add('active');
+    }
   } else {
     console.warn('Heading not found:', id);
   }
@@ -287,6 +296,11 @@ window.scrollToHeading = function(id, event) {
 function buildTOC(mdContent) {
   const tocPanel = document.getElementById('toc-panel');
   if (!mdContent) return;
+
+  // Cleanup old observer
+  if (tocObserver) {
+    tocObserver.disconnect();
+  }
 
   const headings = mdContent.querySelectorAll('h2, h3, h4');
   if (headings.length < 3) {
@@ -305,11 +319,42 @@ function buildTOC(mdContent) {
     // Avoid href="#id" which triggers the hashchange router. 
     // Use href="javascript:void(0)" and onclick instead.
     // Also use button styling/behavior to be absolutely safe from router interference
-    tocHtml += `<div class="toc-item ${cls}" style="cursor:pointer;" onclick="scrollToHeading('${id}', event)">${h.textContent}</div>`;
+    tocHtml += `<div class="toc-item ${cls}" data-target="${id}" style="cursor:pointer;" onclick="scrollToHeading('${id}', event)">${h.textContent}</div>`;
   });
 
   tocPanel.innerHTML = tocHtml;
   tocPanel.classList.add('show');
+
+  // Setup IntersectionObserver for TOC highlighting
+  const observerOptions = {
+    root: null,
+    rootMargin: '-80px 0px -60% 0px',
+    threshold: 0
+  };
+
+  tocObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        document.querySelectorAll('.toc-item').forEach(item => item.classList.remove('active'));
+        const activeItem = document.querySelector(`.toc-item[data-target="${id}"]`);
+        if (activeItem) {
+          activeItem.classList.add('active');
+          // Scroll TOC panel to keep active item in view
+          const panelHeight = tocPanel.clientHeight;
+          const itemTop = activeItem.offsetTop;
+          if (itemTop < tocPanel.scrollTop || itemTop > tocPanel.scrollTop + panelHeight - 30) {
+             tocPanel.scrollTo({
+                top: itemTop - panelHeight / 2,
+                behavior: 'smooth'
+             });
+          }
+        }
+      }
+    });
+  }, observerOptions);
+
+  headings.forEach(h => tocObserver.observe(h));
 }
 
 // --- Sidebar ---
