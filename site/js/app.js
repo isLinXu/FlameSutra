@@ -268,6 +268,7 @@ function renderAppendixCard(page) {
 window.scrollToHeading = function(id, event) {
   if (event) {
     event.preventDefault();
+    event.stopPropagation();
   }
   const el = document.getElementById(id);
   if (el) {
@@ -278,6 +279,8 @@ window.scrollToHeading = function(id, event) {
          top: offsetPosition,
          behavior: "smooth"
     });
+  } else {
+    console.warn('Heading not found:', id);
   }
 };
 
@@ -293,12 +296,16 @@ function buildTOC(mdContent) {
 
   let tocHtml = '<div class="toc-title">本卷目录</div>';
   headings.forEach((h, i) => {
+    // Generate a robust ID if the heading doesn't have one
     const id = h.id || `heading-${i}`;
-    if (!h.id) h.id = id;
+    if (!h.id) {
+      h.id = id;
+    }
     const cls = h.tagName === 'H3' ? 'toc-h3' : h.tagName === 'H4' ? 'toc-h4' : '';
     // Avoid href="#id" which triggers the hashchange router. 
     // Use href="javascript:void(0)" and onclick instead.
-    tocHtml += `<a class="toc-item ${cls}" href="javascript:void(0)" onclick="scrollToHeading('${id}', event)">${h.textContent}</a>`;
+    // Also use button styling/behavior to be absolutely safe from router interference
+    tocHtml += `<div class="toc-item ${cls}" style="cursor:pointer;" onclick="scrollToHeading('${id}', event)">${h.textContent}</div>`;
   });
 
   tocPanel.innerHTML = tocHtml;
