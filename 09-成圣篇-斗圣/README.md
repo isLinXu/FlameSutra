@@ -3281,3 +3281,27 @@ print("典型场景: 7B 草稿 + 70B 目标 = 2-3x 加速")
 *"弹指间，空间碎裂；挥手间，天地变色。半步成神的你，已经站在了绝大多数修炼者永远无法企及的高度。但前方，还有最后一步——那一步之遥，便是真正的帝境。"*
 
 **成圣篇，完。**
+
+---
+
+## 本卷增强补全（2026）— 硬件×算子×并行主线 · FlashAttention-3 · MoE 成本模型
+
+> 本节为《焚诀》深度研究版的**回填内容**，用于把 MoE/FlashAttention/长上下文串成“硬件—算子—并行”的一条工程主线。  
+> 完整增强总览见：[焚诀-深度研究版-全卷增强补全（2026）](../焚诀-深度研究版-全卷增强补全.md)
+
+### 1) FlashAttention-3（2024）：为什么它代表“新硬件时代的注意力优化”
+
+FlashAttention-3 面向 Hopper（H100）等新硬件，强调**异步调度**与**低精度（如 FP8）**以提高利用率，并把 attention 的瓶颈从“算术”拉回到“内存读写与调度”：  
+<https://ai.meta.com/research/publications/flashattention-3-fast-and-accurate-attention-with-asynchrony-and-low-precision/>
+
+**你需要带走的工程结论**：  
+- 长上下文的关键瓶颈常在 **内存带宽与 IO pattern**，优化读写比堆 FLOPs 更有效  
+- 低精度不是“免费的”：必须配套误差评估与回归（与第六卷评测体系合流）
+
+### 2) MoE 工程化三问（建议回填到 MoE 章节末）
+
+1. **路由是否塌缩**：专家负载是否过度集中？（负载均衡损失 + 可视化）  
+2. **All-to-All 成本多少**：通信占比是否压过计算？（把通信当一等公民）  
+3. **推理是否真省钱**：每 token 激活专家数 \\(K\\) 与 KV cache / batch 策略如何耦合？
+
+参考：Mixtral（开源 MoE）发布信息：<https://mistral.ai/news/mixtral-of-experts/>

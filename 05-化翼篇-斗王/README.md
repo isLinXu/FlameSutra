@@ -3071,3 +3071,32 @@ fault_tolerance_strategies()
 *焚诀曰：修炼之道，在于突破。当你感到被束缚，那就是突破的时刻。*
 
 *斗气化翼，翱翔九天。*
+
+---
+
+## 本卷增强补全（2026）— 吞吐/延迟/成本三角 · 监控与容错 · 工程闭环
+
+> 本节为《焚诀》深度研究版的**回填内容**，用于把“会用 DDP/DeepSpeed”升级为“会做训练系统工程”。  
+> 完整增强总览见：[焚诀-深度研究版-全卷增强补全（2026）](../焚诀-深度研究版-全卷增强补全.md)
+
+### 1) 训练系统的三角关系：更快、更省、更稳不能同时拉满
+
+| 目标 | 你能调的杠杆 | 常见副作用 |
+|---|---|---|
+| 更快（吞吐） | 更大 batch、更多并行、算子融合/FlashAttention | 显存更紧、数值更不稳 |
+| 更省（成本） | 混合精度、ZeRO/FSDP、激活重算 | 训练更慢、工程更复杂 |
+| 更稳（可复现） | 固定版本、容错、日志、监控 | 迭代速度变慢但长期收益更高 |
+
+### 2) Best Practices：分布式训练必备监控（建议作为“默认模板”）
+
+- **训练侧**：step time、吞吐（tokens/s）、loss、grad norm、AMP 溢出次数  
+- **通信侧**：all-reduce / all-to-all 时间占比、网络带宽利用率、straggler（慢卡）  
+- **资源侧**：显存曲线、碎片化、CPU/IO 瓶颈、磁盘与 checkpoint 带宽
+
+### 3) 可回填建议：断点续训“必须记录项”
+
+- RNG 状态（Python/NumPy/PyTorch/CUDA）  
+- dataloader 状态（sampler、epoch、global step）  
+- optimizer/scheduler 状态  
+- mixed precision 状态（loss scale）  
+- 训练配置快照（超参 + 代码版本 + 数据版本）

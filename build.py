@@ -200,6 +200,76 @@ def count_lines(filepath):
         return 0
 
 
+def extract_sections(md_content):
+    """
+    Extract section structure from markdown content.
+    Returns a list of section dicts with id, level, title, and children.
+    This enables knowledge-graph + collapsible section rendering.
+    """
+    sections = []
+    lines = md_content.split('\n')
+    current_h2 = None
+
+    for line in lines:
+        if line.startswith('## '):
+            title = line[3:].strip()
+            sec_id = generate_id_from_text(title)
+            section = {
+                "id": sec_id,
+                "title": title,
+                "level": 2,
+                "children": [],
+            }
+            sections.append(section)
+            current_h2 = section
+        elif line.startswith('### ') and current_h2 is not None:
+            title = line[4:].strip()
+            child_id = generate_id_from_text(title)
+            child = {
+                "id": child_id,
+                "title": title,
+                "level": 3,
+            }
+            current_h2["children"].append(child)
+
+    return sections
+
+
+def extract_knowledge_links(all_volumes_data):
+    """
+    Build cross-volume knowledge graph links based on known concept dependencies.
+    These links show how concepts flow between volumes.
+    """
+    # Define key concepts per volume and their forward/backward references
+    link_rules = [
+        # (from_vol, to_vol, relation_label, relation_type)
+        ("vol01", "vol02", "PyTorch基础 → 架构入门", "prerequisite"),
+        ("vol02", "vol03", "Transformer架构 → 预训练", "prerequisite"),
+        ("vol03", "vol04", "预训练模型 → 高效微调", "prerequisite"),
+        ("vol04", "vol05", "LoRA微调 → 分布式扩展", "prerequisite"),
+        ("vol05", "vol06", "分布式训练 → 工业级流水线", "prerequisite"),
+        ("vol06", "vol07", "SFT/RAG → 多模态融合", "prerequisite"),
+        ("vol07", "vol08", "VLM多模态 → 对齐训练", "prerequisite"),
+        ("vol08", "vol09", "RLHF对齐 → 大规模预训练", "prerequisite"),
+        ("vol09", "vol10", "基础架构 → AGI前沿", "prerequisite"),
+        # Cross-volume concept links
+        ("vol01", "vol05", "Python基础 → 混合精度", "concept"),
+        ("vol02", "vol07", "CNN → 视觉编码器", "concept"),
+        ("vol02", "vol08", "Transformer → PPO对齐", "concept"),
+        ("vol03", "vol06", "Tokenizer → 数据清洗", "concept"),
+        ("vol04", "vol08", "PEFT微调 → DPO优化", "concept"),
+        ("vol05", "vol09", "DeepSpeed → Megatron-LM", "concept"),
+        ("vol06", "vol11", "SFT工程 → 面经实战", "application"),
+        ("vol07", "vol10", "多模态 → 原生统一", "concept"),
+        ("vol09", "vol10", "MoE → 自进化Agent", "concept"),
+    ]
+
+    return [
+        {"source": s, "target": t, "label": l, "type": typ}
+        for s, t, l, typ in link_rules
+    ]
+
+
 def generate_id_from_text(text):
     """Generate a URL-safe ID from heading text."""
     # Remove markdown formatting
@@ -220,7 +290,8 @@ def build_site():
     PAGES_DIR.mkdir(parents=True, exist_ok=True)
     
     pages_data = []
-    
+    all_sections = {}  # vol_id -> sections list
+
     # Process each volume
     for vol in VOLUMES:
         src_file = ROOT / vol["dir"] / "README.md"
@@ -233,14 +304,18 @@ def build_site():
         # Read markdown
         with open(src_file, 'r', encoding='utf-8') as f:
             md_content = f.read()
-        
+
+        # Extract section structure for knowledge graph + collapsible sections
+        sections = extract_sections(md_content)
+        all_sections[vol["id"]] = sections
+
         # Copy as .html (will be rendered client-side as markdown)
         with open(dst_file, 'w', encoding='utf-8') as f:
             f.write(md_content)
-        
+
         # Get line count
         lines = count_lines(src_file)
-        
+
         # Build page data
         page_data = {
             "id": vol["id"],
@@ -253,6 +328,8 @@ def build_site():
             "isAppendix": vol["is_appendix"],
             "icon": vol["icon"],
             "lines": lines,
+            "sections": sections,
+            "sectionCount": len(sections),
         }
         pages_data.append(page_data)
         
@@ -260,12 +337,18 @@ def build_site():
         print(f"  {status} {vol['id']:10s} | {vol['title']:8s} | {lines:>6,} 行")
     
     # Build site data JSON
+    # Extract cross-volume knowledge links
+    knowledge_links = extract_knowledge_links(pages_data)
+
     site_data = {
         "pages": pages_data,
         "home": {
             "title": "焚诀",
             "subtitle": "A Cultivation Guide for Foundation Models: From Dust to Deity",
-        }
+        },
+        "knowledgeGraph": {
+            "links": knowledge_links,
+        },
     }
     
     site_data_json = json.dumps(site_data, ensure_ascii=False, indent=2)

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://pyodide-cdn-addons.iodide.io; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net https://pyodide-cdn-addons.iodide.io; worker-src 'self' blob:;">
   <title>焚诀 FlameSutra — 大模型修炼指南</title>
   <meta name="description" content="以玄幻修仙之喻，讲解 Foundation Model 全栈技术。从 Python 基础到 AGI 探索，十卷完整修炼体系。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,9 +11,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&family=Noto+Serif+SC:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
-  <!-- Load marked.js and DOMPurify before the module -->
+  <!-- Load marked.js, DOMPurify, and Pyodide (lazy) -->
   <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 </head>
 <body>
 
@@ -45,6 +46,18 @@
     <span class="search-icon">🔍</span>
     <input class="search-input" type="text" placeholder="搜索修炼内容... (⌘K)" aria-label="搜索">
   </div>
+  
+  <!-- Mode Toggle (修仙 ⇄ 学术) + GitHub -->
+  <a href="https://github.com/isLinXu/FlameSutra" target="_blank" rel="noopener noreferrer" class="github-link" title="GitHub">
+    <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+  </a>
+  
+  <button class="mode-toggle" id="mode-toggle" title="切换显示模式 (⇧+M)">
+    <span class="mode-icon">⚔️</span>
+    <span class="mode-text">修仙</span>
+  </button>
+    <span class="theme-text">暗</span>
+  </button>
   
   <button class="mobile-menu-btn" aria-label="菜单">☰</button>
 </header>
@@ -167,7 +180,486 @@ window.__SITE_DATA__ = {
       "description": "Python、线性代数、微积分、概率论、PyTorch 基础",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 3499
+      "lines": 3543,
+      "sections": [
+        {
+          "id": "开篇引言入宗之日",
+          "title": "开篇引言：入宗之日",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "修炼路线图",
+          "title": "修炼路线图",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "1.1-斗气入门Python-基本数据结构",
+          "title": "1.1 斗气入门：Python 基本数据结构",
+          "level": 2,
+          "children": [
+            {
+              "id": "变量与数据类型----存放斗气的容器",
+              "title": "变量与数据类型 —— 存放斗气的容器",
+              "level": 3
+            },
+            {
+              "id": "列表List---斗气阵列",
+              "title": "列表（List）—— 斗气阵列",
+              "level": 3
+            },
+            {
+              "id": "字典Dict---铭文符箓",
+              "title": "字典（Dict）—— 铭文符箓",
+              "level": 3
+            },
+            {
+              "id": "列表推导式----批量炼制术",
+              "title": "列表推导式 —— 批量炼制术",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "1.2-体术招式函数类装饰器",
+          "title": "1.2 体术招式：函数、类、装饰器",
+          "level": 2,
+          "children": [
+            {
+              "id": "函数----基础体术",
+              "title": "函数 —— 基础体术",
+              "level": 3
+            },
+            {
+              "id": "类Class---功法体系",
+              "title": "类（Class）—— 功法体系",
+              "level": 3
+            },
+            {
+              "id": "装饰器----附魔符文",
+              "title": "装饰器 —— 附魔符文",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "1.3-铁骨修炼NumPy",
+          "title": "1.3 铁骨修炼：NumPy",
+          "level": 2,
+          "children": [
+            {
+              "id": "NumPy-数组灵力矩阵",
+              "title": "NumPy 数组：灵力矩阵",
+              "level": 3
+            },
+            {
+              "id": "广播机制灵力共振",
+              "title": "广播机制：灵力共振",
+              "level": 3
+            },
+            {
+              "id": "矩阵运算灵力流转",
+              "title": "矩阵运算：灵力流转",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "2.1-空间感知之术---线性代数",
+          "title": "2.1 空间感知之术 — 线性代数",
+          "level": 2,
+          "children": [
+            {
+              "id": "向量灵力的方向与强度",
+              "title": "向量：灵力的方向与强度",
+              "level": 3
+            },
+            {
+              "id": "点积灵力共鸣度",
+              "title": "点积：灵力共鸣度",
+              "level": 3
+            },
+            {
+              "id": "矩阵变换法阵",
+              "title": "矩阵：变换法阵",
+              "level": 3
+            },
+            {
+              "id": "特征值与特征向量灵力的本质",
+              "title": "特征值与特征向量：灵力的本质",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "2.2-变化追踪之术---微积分",
+          "title": "2.2 变化追踪之术 — 微积分",
+          "level": 2,
+          "children": [
+            {
+              "id": "导数灵力变化的感知",
+              "title": "导数：灵力变化的感知",
+              "level": 3
+            },
+            {
+              "id": "链式法则经脉溯源之术",
+              "title": "链式法则：经脉溯源之术",
+              "level": 3
+            },
+            {
+              "id": "梯度灵力流最强的方向",
+              "title": "梯度：灵力流最强的方向",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "2.3-天机推演之术---概率论",
+          "title": "2.3 天机推演之术 — 概率论",
+          "level": 2,
+          "children": [
+            {
+              "id": "概率分布天道的模式",
+              "title": "概率分布：天道的模式",
+              "level": 3
+            },
+            {
+              "id": "贝叶斯定理证据更新术",
+              "title": "贝叶斯定理：证据更新术",
+              "level": 3
+            },
+            {
+              "id": "交叉熵混沌度量之法",
+              "title": "交叉熵：混沌度量之法",
+              "level": 3
+            },
+            {
+              "id": "KL-散度两个灵力场的差距",
+              "title": "KL 散度：两个灵力场的差距",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "3.1-灵力容器Tensor张量",
+          "title": "3.1 灵力容器：Tensor（张量）",
+          "level": 2,
+          "children": [
+            {
+              "id": "张量操作灵力运转",
+              "title": "张量操作：灵力运转",
+              "level": 3
+            },
+            {
+              "id": "异火召唤GPU-加速",
+              "title": "异火召唤：GPU 加速",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "3.2-自动灵力追踪Autograd",
+          "title": "3.2 自动灵力追踪：Autograd",
+          "level": 2,
+          "children": [
+            {
+              "id": "计算图可视化",
+              "title": "计算图可视化",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "3.3-功法模板nn.Module",
+          "title": "3.3 功法模板：nn.Module",
+          "level": 2,
+          "children": [
+            {
+              "id": "常用网络层",
+              "title": "常用网络层",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "3.4-日常修炼循环训练流程",
+          "title": "3.4 日常修炼循环：训练流程",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "3.5-药材流水线DataLoader",
+          "title": "3.5 药材流水线：DataLoader",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "4.1-认识药材MNIST-数据集",
+          "title": "4.1 认识药材：MNIST 数据集",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "4.2-搭建丹炉模型定义",
+          "title": "4.2 搭建丹炉：模型定义",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "4.3-调配火候超参数设定",
+          "title": "4.3 调配火候：超参数设定",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "4.4-开炉炼丹训练循环",
+          "title": "4.4 开炉炼丹：训练循环",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "4.5-炼丹可视化修炼曲线",
+          "title": "4.5 炼丹可视化：修炼曲线",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "4.6-常见反噬与应对",
+          "title": "4.6 常见反噬与应对",
+          "level": 2,
+          "children": [
+            {
+              "id": "反噬一CUDA-out-of-memory异火显存不足",
+              "title": "反噬一：CUDA out of memory（异火显存不足）",
+              "level": 3
+            },
+            {
+              "id": "反噬二Loss-为-NaN灵力暴走",
+              "title": "反噬二：Loss 为 NaN（灵力暴走）",
+              "level": 3
+            },
+            {
+              "id": "反噬三维度不匹配经脉错位",
+              "title": "反噬三：维度不匹配（经脉错位）",
+              "level": 3
+            },
+            {
+              "id": "反噬四准确率不提升走火入魔",
+              "title": "反噬四：准确率不提升（走火入魔）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ANumPy-修炼手册---灵气操控入门",
+          "title": "附录 A：NumPy 修炼手册 — 灵气操控入门",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-NumPy-核心操作速查",
+              "title": "A.1 NumPy 核心操作速查",
+              "level": 3
+            },
+            {
+              "id": "A.2-NumPy-性能黄金法则",
+              "title": "A.2 NumPy 性能黄金法则",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷修炼清单",
+          "title": "本卷修炼清单",
+          "level": 2,
+          "children": [
+            {
+              "id": "体魄淬炼Python",
+              "title": "体魄淬炼（Python）",
+              "level": 3
+            },
+            {
+              "id": "天地灵气感知数学",
+              "title": "天地灵气感知（数学）",
+              "level": 3
+            },
+            {
+              "id": "灵力初觉PyTorch",
+              "title": "灵力初觉（PyTorch）",
+              "level": 3
+            },
+            {
+              "id": "凝聚气旋MNIST",
+              "title": "凝聚气旋（MNIST）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "境界突破通往第二卷的条件",
+          "title": "境界突破：通往第二卷的条件",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-ANumPy-进阶修炼手册",
+          "title": "附录 A：NumPy 进阶修炼手册",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-广播机制---斗气自动对齐",
+              "title": "A.1 广播机制 — 斗气自动对齐",
+              "level": 3
+            },
+            {
+              "id": "A.2-高级索引与花式索引",
+              "title": "A.2 高级索引与花式索引",
+              "level": 3
+            },
+            {
+              "id": "A.3-矩阵运算---斗气阵法",
+              "title": "A.3 矩阵运算 — 斗气阵法",
+              "level": 3
+            },
+            {
+              "id": "A.4-性能优化技巧",
+              "title": "A.4 性能优化技巧",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-BMatplotlib-可视化---斗气波动图",
+          "title": "附录 B：Matplotlib 可视化 — 斗气波动图",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-训练曲线可视化",
+              "title": "B.1 训练曲线可视化",
+              "level": 3
+            },
+            {
+              "id": "B.2-模型参数分布可视化",
+              "title": "B.2 模型参数分布可视化",
+              "level": 3
+            },
+            {
+              "id": "B.3-注意力热力图",
+              "title": "B.3 注意力热力图",
+              "level": 3
+            },
+            {
+              "id": "B.4-学习率调度可视化",
+              "title": "B.4 学习率调度可视化",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-CPyTorch-深度剖析---灵力内视之术",
+          "title": "附录 C：PyTorch 深度剖析 — 灵力内视之术",
+          "level": 2,
+          "children": [
+            {
+              "id": "C.1-Autograd-剖析---灵力回溯的真相",
+              "title": "C.1 Autograd 剖析 — 灵力回溯的真相",
+              "level": 3
+            },
+            {
+              "id": "C.2-Tensor-内存管理---灵力容器修炼",
+              "title": "C.2 Tensor 内存管理 — 灵力容器修炼",
+              "level": 3
+            },
+            {
+              "id": "C.3-Python-高级修炼技巧",
+              "title": "C.3 Python 高级修炼技巧",
+              "level": 3
+            },
+            {
+              "id": "C.4-调试实战---反噬排查秘籍",
+              "title": "C.4 调试实战 — 反噬排查秘籍",
+              "level": 3
+            },
+            {
+              "id": "C.5-PyTorch-2.x-新特性---新时代修炼法",
+              "title": "C.5 PyTorch 2.x 新特性 — 新时代修炼法",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-DPython-数据科学工具箱---炼丹辅助器具",
+          "title": "附录 D：Python 数据科学工具箱 — 炼丹辅助器具",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-pandas-数据处理---药材分类术",
+              "title": "D.1 pandas 数据处理 — 药材分类术",
+              "level": 3
+            },
+            {
+              "id": "D.2-JSONYAML-配置管理---丹方存储术",
+              "title": "D.2 JSON/YAML 配置管理 — 丹方存储术",
+              "level": 3
+            },
+            {
+              "id": "D.3-常用炼丹辅助函数集",
+              "title": "D.3 常用炼丹辅助函数集",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录推荐修炼资源",
+          "title": "附录：推荐修炼资源",
+          "level": 2,
+          "children": [
+            {
+              "id": "体魄淬炼Python",
+              "title": "体魄淬炼（Python）",
+              "level": 3
+            },
+            {
+              "id": "天地灵气数学",
+              "title": "天地灵气（数学）",
+              "level": 3
+            },
+            {
+              "id": "灵力修炼PyTorch",
+              "title": "灵力修炼（PyTorch）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--核心原理--最新进展--典型应用--Best-Practices",
+          "title": "本卷增强补全（2026）— 核心原理 · 最新进展 · 典型应用 · Best Practices",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-训练为何会收敛从损失函数到梯度下降最小数学闭环",
+              "title": "1) 训练为何会收敛：从损失函数到梯度下降（最小数学闭环）",
+              "level": 3
+            },
+            {
+              "id": "2-新手最常见反噬的数值稳定要点建议回填到-4.6-反噬小节",
+              "title": "2) 新手最常见“反噬”的数值稳定要点（建议回填到 4.6 反噬小节）",
+              "level": 3
+            },
+            {
+              "id": "3-从-MNIST-迁移到真实任务两条最小项目路线",
+              "title": "3) 从 MNIST 迁移到真实任务：两条最小项目路线",
+              "level": 3
+            },
+            {
+              "id": "4-Best-Practices最小可复现实验清单建议回填到训练循环卷末清单",
+              "title": "4) Best Practices：最小可复现实验清单（建议回填到训练循环/卷末清单）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 28
     },
     {
       "id": "vol02",
@@ -179,7 +671,601 @@ window.__SITE_DATA__ = {
       "description": "CNN、RNN/LSTM、Transformer 架构深度拆解",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 11444
+      "lines": 11482,
+      "sections": [
+        {
+          "id": "开篇引言斗气外放万象初生",
+          "title": "开篇引言：斗气外放，万象初生",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章火眼金睛---卷积神经网络-CNN",
+          "title": "第一章：火眼金睛 — 卷积神经网络 (CNN)",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-为何需要新的斗技",
+              "title": "1.1 为何需要新的斗技？",
+              "level": 3
+            },
+            {
+              "id": "1.2-卷积操作灵瞳扫描术",
+              "title": "1.2 卷积操作：灵瞳扫描术",
+              "level": 3
+            },
+            {
+              "id": "1.3-核心概念详解",
+              "title": "1.3 核心概念详解",
+              "level": 3
+            },
+            {
+              "id": "1.4-特征层级从灵力涟漪到完整阵法",
+              "title": "1.4 特征层级：从灵力涟漪到完整阵法",
+              "level": 3
+            },
+            {
+              "id": "1.5-经典架构演进",
+              "title": "1.5 经典架构演进",
+              "level": 3
+            },
+            {
+              "id": "1.6-火眼金睛的进阶修炼术",
+              "title": "1.6 火眼金睛的进阶修炼术",
+              "level": 3
+            },
+            {
+              "id": "1.8-数据增强与正则化---锤炼斗气的秘术",
+              "title": "1.8 数据增强与正则化 — 锤炼斗气的秘术",
+              "level": 3
+            },
+            {
+              "id": "1.9-目标检测与分割---火眼金睛的终极形态",
+              "title": "1.9 目标检测与分割 — 火眼金睛的终极形态",
+              "level": 3
+            },
+            {
+              "id": "1.6-实战用-CNN-修炼-CIFAR-10-分类",
+              "title": "1.6 实战：用 CNN 修炼 CIFAR-10 分类",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-A斗气修炼心法---优化算法与损失函数",
+          "title": "附录 A：斗气修炼心法 — 优化算法与损失函数",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-优化算法详解",
+              "title": "A.1 优化算法详解",
+              "level": 3
+            },
+            {
+              "id": "A.2-损失函数详解",
+              "title": "A.2 损失函数详解",
+              "level": 3
+            },
+            {
+              "id": "A.3-高级训练技巧---突破瓶颈的秘术",
+              "title": "A.3 高级训练技巧 — 突破瓶颈的秘术",
+              "level": 3
+            },
+            {
+              "id": "A.4-修炼心得总结",
+              "title": "A.4 修炼心得总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B灵力精炼术---模型压缩与优化",
+          "title": "附录 B：灵力精炼术 — 模型压缩与优化",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-为何需要模型压缩",
+              "title": "B.1 为何需要模型压缩？",
+              "level": 3
+            },
+            {
+              "id": "B.2-权重量化Quantization",
+              "title": "B.2 权重量化（Quantization）",
+              "level": 3
+            },
+            {
+              "id": "B.3-知识蒸馏Knowledge-Distillation",
+              "title": "B.3 知识蒸馏（Knowledge Distillation）",
+              "level": 3
+            },
+            {
+              "id": "B.4-模型剪枝Pruning",
+              "title": "B.4 模型剪枝（Pruning）",
+              "level": 3
+            },
+            {
+              "id": "B.5-神经网络架构搜索NAS",
+              "title": "B.5 神经网络架构搜索（NAS）",
+              "level": 3
+            },
+            {
+              "id": "B.6-综合案例完整模型压缩流程",
+              "title": "B.6 综合案例：完整模型压缩流程",
+              "level": 3
+            },
+            {
+              "id": "B.7-修炼心得总结",
+              "title": "B.7 修炼心得总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章时间感知---循环神经网络-RNNLSTM",
+          "title": "第二章：时间感知 — 循环神经网络 (RNN/LSTM)",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-序列的本质",
+              "title": "2.1 序列的本质",
+              "level": 3
+            },
+            {
+              "id": "2.2-RNN时间感知的基本功法",
+              "title": "2.2 RNN：时间感知的基本功法",
+              "level": 3
+            },
+            {
+              "id": "2.3-梯度消失漫长经脉中的斗气损耗",
+              "title": "2.3 梯度消失：漫长经脉中的斗气损耗",
+              "level": 3
+            },
+            {
+              "id": "2.4-LSTM斗气门控之术",
+              "title": "2.4 LSTM：斗气门控之术",
+              "level": 3
+            },
+            {
+              "id": "2.5-GRU精简版门控",
+              "title": "2.5 GRU：精简版门控",
+              "level": 3
+            },
+            {
+              "id": "2.6-双向-RNN过去与未来双向感知",
+              "title": "2.6 双向 RNN：过去与未来双向感知",
+              "level": 3
+            },
+            {
+              "id": "2.7-实战LSTM-文本生成",
+              "title": "2.7 实战：LSTM 文本生成",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章天道法则---Transformer-架构深度拆解",
+          "title": "第三章：天道法则 — Transformer 架构深度拆解",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-为何需要-Transformer",
+              "title": "3.1 为何需要 Transformer？",
+              "level": 3
+            },
+            {
+              "id": "3.2-自注意力机制Self-Attention天道法则的核心",
+              "title": "3.2 自注意力机制（Self-Attention）：天道法则的核心",
+              "level": 3
+            },
+            {
+              "id": "3.3-多头注意力Multi-Head-Attention多重神识并行感知",
+              "title": "3.3 多头注意力（Multi-Head Attention）：多重神识并行感知",
+              "level": 3
+            },
+            {
+              "id": "3.4-位置编码Positional-Encoding时空感知法阵",
+              "title": "3.4 位置编码（Positional Encoding）：时空感知法阵",
+              "level": 3
+            },
+            {
+              "id": "3.5-前馈网络Feed-Forward-Network灵力放大与变换",
+              "title": "3.5 前馈网络（Feed-Forward Network）：灵力放大与变换",
+              "level": 3
+            },
+            {
+              "id": "3.6-层归一化Layer-Normalization稳定灵力之法",
+              "title": "3.6 层归一化（Layer Normalization）：稳定灵力之法",
+              "level": 3
+            },
+            {
+              "id": "3.7-残差连接Residual-Connections斗气传输捷径",
+              "title": "3.7 残差连接（Residual Connections）：斗气传输捷径",
+              "level": 3
+            },
+            {
+              "id": "3.8-完整-Transformer-块组装天道法则",
+              "title": "3.8 完整 Transformer 块：组装天道法则",
+              "level": 3
+            },
+            {
+              "id": "3.9-Encoder-vs.-Decoder感知与生成",
+              "title": "3.9 Encoder vs. Decoder：感知与生成",
+              "level": 3
+            },
+            {
+              "id": "3.10-为何-Transformer-如此强大",
+              "title": "3.10 为何 Transformer 如此强大？",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章手搓斗技---从零实现-Transformer",
+          "title": "第四章：手搓斗技 — 从零实现 Transformer",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-完整代码实现",
+              "title": "4.1 完整代码实现",
+              "level": 3
+            },
+            {
+              "id": "4.2-验证实现序列复制任务",
+              "title": "4.2 验证实现：序列复制任务",
+              "level": 3
+            },
+            {
+              "id": "4.3-维度变化全程追踪",
+              "title": "4.3 维度变化全程追踪",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章进阶篇天道法则的进化之路---前沿技术融合",
+          "title": "第四章（进阶篇）：天道法则的进化之路 — 前沿技术融合",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-Flash-Attention---闪电般的灵力操控",
+              "title": "4.1 Flash Attention — 闪电般的灵力操控",
+              "level": 3
+            },
+            {
+              "id": "4.2-RoPE旋转位置编码---相对位置的感知",
+              "title": "4.2 RoPE（旋转位置编码） — 相对位置的感知",
+              "level": 3
+            },
+            {
+              "id": "4.3-GQA分组查询注意力---计算效率的极致",
+              "title": "4.3 GQA（分组查询注意力） — 计算效率的极致",
+              "level": 3
+            },
+            {
+              "id": "4.6-Transformer-训练技巧与稳定性优化",
+              "title": "4.6 Transformer 训练技巧与稳定性优化",
+              "level": 3
+            },
+            {
+              "id": "4.7-LoRA低秩自适应--轻量级微调术",
+              "title": "4.7 LoRA（低秩自适应）— 轻量级微调术",
+              "level": 3
+            },
+            {
+              "id": "4.5-三大前沿技术对比总结",
+              "title": "4.5 三大前沿技术对比总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章道法评估---模型调试与修炼进阶",
+          "title": "第五章：道法评估 — 模型调试与修炼进阶",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-模型评估指标体系",
+              "title": "5.1 模型评估指标体系",
+              "level": 3
+            },
+            {
+              "id": "5.2-学习曲线分析",
+              "title": "5.2 学习曲线分析",
+              "level": 3
+            },
+            {
+              "id": "5.3-错误分析Error-Analysis",
+              "title": "5.3 错误分析（Error Analysis）",
+              "level": 3
+            },
+            {
+              "id": "5.4-模型调试技巧",
+              "title": "5.4 模型调试技巧",
+              "level": 3
+            },
+            {
+              "id": "5.5-修炼总结与境界突破条件更新",
+              "title": "5.5 修炼总结与境界突破条件（更新）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "实战案例完整图像分类项目---从零到部署",
+          "title": "实战案例：完整图像分类项目 — 从零到部署",
+          "level": 2,
+          "children": [
+            {
+              "id": "案例目标",
+              "title": "案例目标",
+              "level": 3
+            },
+            {
+              "id": "6.1-项目结构",
+              "title": "6.1 项目结构",
+              "level": 3
+            },
+            {
+              "id": "6.2-配置文件config.yaml",
+              "title": "6.2 配置文件（config.yaml）",
+              "level": 3
+            },
+            {
+              "id": "6.3-数据工具utilsdatautils.py",
+              "title": "6.3 数据工具（utils/data_utils.py）",
+              "level": 3
+            },
+            {
+              "id": "6.4-ResNet-模型modelsresnet.py",
+              "title": "6.4 ResNet 模型（models/resnet.py）",
+              "level": 3
+            },
+            {
+              "id": "6.5-训练脚本train.py",
+              "title": "6.5 训练脚本（train.py）",
+              "level": 3
+            },
+            {
+              "id": "6.6-Checkpoint-工具utilscheckpointing.py",
+              "title": "6.6 Checkpoint 工具（utils/checkpointing.py）",
+              "level": 3
+            },
+            {
+              "id": "6.7-可视化工具utilsvisualization.py",
+              "title": "6.7 可视化工具（utils/visualization.py）",
+              "level": 3
+            },
+            {
+              "id": "6.8-预测脚本predict.py",
+              "title": "6.8 预测脚本（predict.py）",
+              "level": 3
+            },
+            {
+              "id": "6.9-运行项目",
+              "title": "6.9 运行项目",
+              "level": 3
+            },
+            {
+              "id": "6.10-修炼心得",
+              "title": "6.10 修炼心得",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第六章续篇实战宝典---模型部署与工程实践",
+          "title": "第六章（续篇）：实战宝典 — 模型部署与工程实践",
+          "level": 2,
+          "children": [
+            {
+              "id": "6.11-模型导出与转换",
+              "title": "6.11 模型导出与转换",
+              "level": 3
+            },
+            {
+              "id": "6.12-TensorRT-加速推理",
+              "title": "6.12 TensorRT 加速推理",
+              "level": 3
+            },
+            {
+              "id": "6.13-移动端部署",
+              "title": "6.13 移动端部署",
+              "level": 3
+            },
+            {
+              "id": "6.14-模型服务化",
+              "title": "6.14 模型服务化",
+              "level": 3
+            },
+            {
+              "id": "6.15-模型监控与-AB-测试",
+              "title": "6.15 模型监控与 A/B 测试",
+              "level": 3
+            },
+            {
+              "id": "6.16-灰度发布与回滚",
+              "title": "6.16 灰度发布与回滚",
+              "level": 3
+            },
+            {
+              "id": "6.17-修炼心得总结",
+              "title": "6.17 修炼心得总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-C神识合道---分布式训练技术",
+          "title": "附录 C：神识合道 — 分布式训练技术",
+          "level": 2,
+          "children": [
+            {
+              "id": "C.1-为何需要分布式训练",
+              "title": "C.1 为何需要分布式训练？",
+              "level": 3
+            },
+            {
+              "id": "C.2-数据并行DataParallel",
+              "title": "C.2 数据并行（DataParallel）",
+              "level": 3
+            },
+            {
+              "id": "C.3-分布式数据并行DistributedDataParallel",
+              "title": "C.3 分布式数据并行（DistributedDataParallel）",
+              "level": 3
+            },
+            {
+              "id": "C.4-混合精度训练Mixed-Precision-Training",
+              "title": "C.4 混合精度训练（Mixed Precision Training）",
+              "level": 3
+            },
+            {
+              "id": "C.5-梯度累积Gradient-Accumulation",
+              "title": "C.5 梯度累积（Gradient Accumulation）",
+              "level": 3
+            },
+            {
+              "id": "C.6-FSDP完全分片数据并行",
+              "title": "C.6 FSDP（完全分片数据并行）",
+              "level": 3
+            },
+            {
+              "id": "C.7-DeepSpeed",
+              "title": "C.7 DeepSpeed",
+              "level": 3
+            },
+            {
+              "id": "C.8-综合案例完整分布式训练流程",
+              "title": "C.8 综合案例：完整分布式训练流程",
+              "level": 3
+            },
+            {
+              "id": "C.9-修炼心得总结",
+              "title": "C.9 修炼心得总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-D实战修炼---从理论到实战",
+          "title": "附录 D：实战修炼 — 从理论到实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-文本分类修炼---情感分析",
+              "title": "D.1 文本分类修炼 — 情感分析",
+              "level": 3
+            },
+            {
+              "id": "D.2-图像分割修炼---语义分割",
+              "title": "D.2 图像分割修炼 — 语义分割",
+              "level": 3
+            },
+            {
+              "id": "D.3-序列生成修炼---简易语言模型",
+              "title": "D.3 序列生成修炼 — 简易语言模型",
+              "level": 3
+            },
+            {
+              "id": "D.4-修炼心得总结",
+              "title": "D.4 修炼心得总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第七章造物之术---生成式模型基础",
+          "title": "第七章：造物之术 — 生成式模型基础",
+          "level": 2,
+          "children": [
+            {
+              "id": "7.1-为何需要生成式模型",
+              "title": "7.1 为何需要生成式模型？",
+              "level": 3
+            },
+            {
+              "id": "7.2-自回归语言模型",
+              "title": "7.2 自回归语言模型",
+              "level": 3
+            },
+            {
+              "id": "7.3-扩散模型Diffusion-Models",
+              "title": "7.3 扩散模型（Diffusion Models）",
+              "level": 3
+            },
+            {
+              "id": "7.4-变分自编码器VAE",
+              "title": "7.4 变分自编码器（VAE）",
+              "level": 3
+            },
+            {
+              "id": "7.5-生成对抗网络GAN",
+              "title": "7.5 生成对抗网络（GAN）",
+              "level": 3
+            },
+            {
+              "id": "7.6-提示工程Prompt-Engineering",
+              "title": "7.6 提示工程（Prompt Engineering）",
+              "level": 3
+            },
+            {
+              "id": "7.7-修炼心得总结",
+              "title": "7.7 修炼心得总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结与境界突破条件",
+          "title": "修炼总结与境界突破条件",
+          "level": 2,
+          "children": [
+            {
+              "id": "本卷回顾",
+              "title": "本卷回顾",
+              "level": 3
+            },
+            {
+              "id": "核心心法铭记",
+              "title": "核心心法铭记",
+              "level": 3
+            },
+            {
+              "id": "境界突破条件自检清单",
+              "title": "境界突破条件（自检清单）",
+              "level": 3
+            },
+            {
+              "id": "下一卷预告",
+              "title": "下一卷预告",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--注意力统一视角--工程组件--稳定性清单",
+          "title": "本卷增强补全（2026）— 注意力统一视角 · 工程组件 · 稳定性清单",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-Self-Attention-的三层理解建议作为-Transformer-章节的开场框架",
+              "title": "1) Self-Attention 的三层理解（建议作为 Transformer 章节的“开场框架”）",
+              "level": 3
+            },
+            {
+              "id": "2-现代-LLM-的常用组件层补齐建议补到卷末或附录",
+              "title": "2) 现代 LLM 的“常用组件层”补齐（建议补到卷末或附录）",
+              "level": 3
+            },
+            {
+              "id": "3-Transformer-训练稳定性与诊断清单Best-Practices",
+              "title": "3) Transformer 训练稳定性与诊断清单（Best Practices）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 16
     },
     {
       "id": "vol03",
@@ -191,7 +1277,400 @@ window.__SITE_DATA__ = {
       "description": "BERT、GPT-2 预训练、Tokenizer、Embedding",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 4091
+      "lines": 4125,
+      "sections": [
+        {
+          "id": "开篇引言从气态到晶体",
+          "title": "开篇引言：从气态到晶体",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章文字炼化---Tokenizer-的原理与构建",
+          "title": "第一章：文字炼化 — Tokenizer 的原理与构建",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-为什么需要-Tokenizer",
+              "title": "1.1 为什么需要 Tokenizer？",
+              "level": 3
+            },
+            {
+              "id": "1.2-BPE字节对编码---最主流的子词算法",
+              "title": "1.2 BPE：字节对编码 — 最主流的子词算法",
+              "level": 3
+            },
+            {
+              "id": "1.3-WordPieceBERT-的选择",
+              "title": "1.3 WordPiece：BERT 的选择",
+              "level": 3
+            },
+            {
+              "id": "1.4-SentencePiece-与-Unigram",
+              "title": "1.4 SentencePiece 与 Unigram",
+              "level": 3
+            },
+            {
+              "id": "1.5-特殊-Token阵法标记",
+              "title": "1.5 特殊 Token：阵法标记",
+              "level": 3
+            },
+            {
+              "id": "1.6-实战训练一个-BPE-Tokenizer",
+              "title": "1.6 实战：训练一个 BPE Tokenizer",
+              "level": 3
+            },
+            {
+              "id": "1.7-避坑符Tokenizer-常见陷阱",
+              "title": "1.7 避坑符：Tokenizer 常见陷阱",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章斗气空间---Embedding-的本质",
+          "title": "第二章：斗气空间 — Embedding 的本质",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-从离散到连续为什么需要-Embedding",
+              "title": "2.1 从离散到连续：为什么需要 Embedding？",
+              "level": 3
+            },
+            {
+              "id": "2.2-One-Hot-vs-Dense-Embedding",
+              "title": "2.2 One-Hot vs Dense Embedding",
+              "level": 3
+            },
+            {
+              "id": "2.3-Word2VecEmbedding-的先驱",
+              "title": "2.3 Word2Vec：Embedding 的先驱",
+              "level": 3
+            },
+            {
+              "id": "2.4-Embedding-的魔法向量算术",
+              "title": "2.4 Embedding 的魔法：向量算术",
+              "level": 3
+            },
+            {
+              "id": "2.5-静态-Embedding-的局限与上下文-Embedding",
+              "title": "2.5 静态 Embedding 的局限与上下文 Embedding",
+              "level": 3
+            },
+            {
+              "id": "2.6-Position-Embedding编码序列顺序",
+              "title": "2.6 Position Embedding：编码序列顺序",
+              "level": 3
+            },
+            {
+              "id": "2.7-Embedding-可视化灵气空间的投影",
+              "title": "2.7 Embedding 可视化：灵气空间的投影",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章双面法则---BERT-预训练原理",
+          "title": "第三章：双面法则 — BERT 预训练原理",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-BERT-的诞生与意义",
+              "title": "3.1 BERT 的诞生与意义",
+              "level": 3
+            },
+            {
+              "id": "3.2-架构纯-Encoder-结构",
+              "title": "3.2 架构：纯 Encoder 结构",
+              "level": 3
+            },
+            {
+              "id": "3.3-预训练任务一Masked-Language-Modeling-MLM",
+              "title": "3.3 预训练任务一：Masked Language Modeling (MLM)",
+              "level": 3
+            },
+            {
+              "id": "3.4-预训练任务二Next-Sentence-Prediction-NSP",
+              "title": "3.4 预训练任务二：Next Sentence Prediction (NSP)",
+              "level": 3
+            },
+            {
+              "id": "3.5-BERT-的预训练数据与规模",
+              "title": "3.5 BERT 的预训练数据与规模",
+              "level": 3
+            },
+            {
+              "id": "3.6-Fine-tuning从通用到专精",
+              "title": "3.6 Fine-tuning：从通用到专精",
+              "level": 3
+            },
+            {
+              "id": "3.7-实战用-BERT-做文本分类",
+              "title": "3.7 实战：用 BERT 做文本分类",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-A斗气进化论---预训练模型族谱与演进",
+          "title": "附录 A：斗气进化论 — 预训练模型族谱与演进",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-RoBERTa稳健改良---去芜存菁",
+              "title": "A.1 RoBERTa：稳健改良 — 去芜存菁",
+              "level": 3
+            },
+            {
+              "id": "A.2-ALBERT以小博大---参数压缩术",
+              "title": "A.2 ALBERT：以小博大 — 参数压缩术",
+              "level": 3
+            },
+            {
+              "id": "A.3-ELECTRA替身修炼术",
+              "title": "A.3 ELECTRA：替身修炼术",
+              "level": 3
+            },
+            {
+              "id": "A.4-T5编码-解码统一---万法归一",
+              "title": "A.4 T5：编码-解码统一 — 万法归一",
+              "level": 3
+            },
+            {
+              "id": "A.5-BART双向编码自回归解码",
+              "title": "A.5 BART：双向编码、自回归解码",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章因果法则---GPT-预训练原理",
+          "title": "第四章：因果法则 — GPT 预训练原理",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-GPT-的哲学自回归生成",
+              "title": "4.1 GPT 的哲学：自回归生成",
+              "level": 3
+            },
+            {
+              "id": "4.2-Causal-Language-Modeling-CLM",
+              "title": "4.2 Causal Language Modeling (CLM)",
+              "level": 3
+            },
+            {
+              "id": "4.3-因果注意力掩码只看过去不窥未来",
+              "title": "4.3 因果注意力掩码：只看过去，不窥未来",
+              "level": 3
+            },
+            {
+              "id": "4.4-GPT-2-架构详解",
+              "title": "4.4 GPT-2 架构详解",
+              "level": 3
+            },
+            {
+              "id": "4.5-生成策略控制创造的火候",
+              "title": "4.5 生成策略：控制创造的火候",
+              "level": 3
+            },
+            {
+              "id": "4.6-BERT-vs-GPT感知大师-vs-创造大师",
+              "title": "4.6 BERT vs GPT：感知大师 vs 创造大师",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B斗技百炼---下游任务微调实战",
+          "title": "附录 B：斗技百炼 — 下游任务微调实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-命名实体识别NER--炼丹识药术",
+              "title": "B.1 命名实体识别（NER）— 炼丹识药术",
+              "level": 3
+            },
+            {
+              "id": "B.2-机器阅读理解MRC--天眼通术",
+              "title": "B.2 机器阅读理解（MRC）— 天眼通术",
+              "level": 3
+            },
+            {
+              "id": "B.3-语义相似度匹配---双星识别术",
+              "title": "B.3 语义相似度匹配 — 双星识别术",
+              "level": 3
+            },
+            {
+              "id": "B.4-实战完整中文文本分类流水线",
+              "title": "B.4 实战：完整中文文本分类流水线",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章首次凝晶---从零训练文本模型",
+          "title": "第五章：首次凝晶 — 从零训练文本模型",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-项目概览",
+              "title": "5.1 项目概览",
+              "level": 3
+            },
+            {
+              "id": "5.2-数据准备采集药材",
+              "title": "5.2 数据准备：采集药材",
+              "level": 3
+            },
+            {
+              "id": "5.3-训练自定义-Tokenizer",
+              "title": "5.3 训练自定义 Tokenizer",
+              "level": 3
+            },
+            {
+              "id": "5.4-构建-Mini-GPT-模型",
+              "title": "5.4 构建 Mini GPT 模型",
+              "level": 3
+            },
+            {
+              "id": "5.5-训练循环",
+              "title": "5.5 训练循环",
+              "level": 3
+            },
+            {
+              "id": "5.6-评估指标Perplexity困惑度",
+              "title": "5.6 评估指标：Perplexity（困惑度）",
+              "level": 3
+            },
+            {
+              "id": "5.7-训练过程监控",
+              "title": "5.7 训练过程监控",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-C凝晶心法---训练进阶技巧与数据工程",
+          "title": "附录 C：凝晶心法 — 训练进阶技巧与数据工程",
+          "level": 2,
+          "children": [
+            {
+              "id": "C.1-学习率调度火候之道",
+              "title": "C.1 学习率调度：火候之道",
+              "level": 3
+            },
+            {
+              "id": "C.2-梯度检查点内存压缩术",
+              "title": "C.2 梯度检查点：内存压缩术",
+              "level": 3
+            },
+            {
+              "id": "C.3-数据工程深化",
+              "title": "C.3 数据工程深化",
+              "level": 3
+            },
+            {
+              "id": "C.4-训练诊断面板",
+              "title": "C.4 训练诊断面板",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-D天地法则---Scaling-Law-与大模型涌现",
+          "title": "附录 D：天地法则 — Scaling Law 与大模型涌现",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-Scaling-Law模型规模的铁律",
+              "title": "D.1 Scaling Law：模型规模的铁律",
+              "level": 3
+            },
+            {
+              "id": "D.2-涌现能力量变到质变的临界点",
+              "title": "D.2 涌现能力：量变到质变的临界点",
+              "level": 3
+            },
+            {
+              "id": "D.3-DeepSpeed-配置实战",
+              "title": "D.3 DeepSpeed 配置实战",
+              "level": 3
+            },
+            {
+              "id": "D.4-训练效率优化技巧",
+              "title": "D.4 训练效率优化技巧",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-E凝晶实战---使用-HuggingFace-Trainer-完整训练流程",
+          "title": "附录 E：凝晶实战 — 使用 HuggingFace Trainer 完整训练流程",
+          "level": 2,
+          "children": [
+            {
+              "id": "E.1-端到端训练脚本",
+              "title": "E.1 端到端训练脚本",
+              "level": 3
+            },
+            {
+              "id": "E.2-Trainer-核心参数速查",
+              "title": "E.2 Trainer 核心参数速查",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结与境界突破条件",
+          "title": "修炼总结与境界突破条件",
+          "level": 2,
+          "children": [
+            {
+              "id": "本卷修炼成果",
+              "title": "本卷修炼成果",
+              "level": 3
+            },
+            {
+              "id": "境界自测",
+              "title": "境界自测",
+              "level": 3
+            },
+            {
+              "id": "突破到第四卷的条件",
+              "title": "突破到第四卷的条件",
+              "level": 3
+            },
+            {
+              "id": "进入下一卷化形篇",
+              "title": "进入下一卷：化形篇",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--预训练范式闭环--开源基座选型--最小-Recipe",
+          "title": "本卷增强补全（2026）— 预训练范式闭环 · 开源基座选型 · 最小 Recipe",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-语言建模的两大范式你到底在学什么",
+              "title": "1) 语言建模的两大范式：你到底在学什么？",
+              "level": 3
+            },
+            {
+              "id": "2-开源基座模型选型四问建议加入卷末选型矩阵",
+              "title": "2) 开源基座模型选型四问（建议加入卷末“选型矩阵”）",
+              "level": 3
+            },
+            {
+              "id": "3-Best-Practices预训练续训的最小-Recipe",
+              "title": "3) Best Practices：预训练/续训的“最小 Recipe”",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 13
     },
     {
       "id": "vol04",
@@ -203,7 +1682,391 @@ window.__SITE_DATA__ = {
       "description": "PEFT（LoRA/DoRA/AdaLoRA）、量化、Prompt Engineering",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 2702
+      "lines": 2736,
+      "sections": [
+        {
+          "id": "开篇引言从结晶到化形",
+          "title": "开篇引言：从结晶到化形",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章幻化之术---参数高效微调-PEFT-总论",
+          "title": "第一章：幻化之术 — 参数高效微调 (PEFT) 总论",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-全量微调的困境",
+              "title": "1.1 全量微调的困境",
+              "level": 3
+            },
+            {
+              "id": "1.2-PEFT参数高效微调的核心思想",
+              "title": "1.2 PEFT：参数高效微调的核心思想",
+              "level": 3
+            },
+            {
+              "id": "1.3-PEFT-方法分类学",
+              "title": "1.3 PEFT 方法分类学",
+              "level": 3
+            },
+            {
+              "id": "1.4-三大流派对比",
+              "title": "1.4 三大流派对比",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章低阶幻化---LoRA-深度剖析",
+          "title": "第二章：低阶幻化 — LoRA 深度剖析",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-LoRA-的核心直觉",
+              "title": "2.1 LoRA 的核心直觉",
+              "level": 3
+            },
+            {
+              "id": "2.2-LoRA-的数学原理",
+              "title": "2.2 LoRA 的数学原理",
+              "level": 3
+            },
+            {
+              "id": "2.3-缩放因子-alpha",
+              "title": "2.3 缩放因子 alpha",
+              "level": 3
+            },
+            {
+              "id": "2.4-秩-Rank-的选择",
+              "title": "2.4 秩 (Rank) 的选择",
+              "level": 3
+            },
+            {
+              "id": "2.5-应用-LoRA-的目标层",
+              "title": "2.5 应用 LoRA 的目标层",
+              "level": 3
+            },
+            {
+              "id": "2.6-DoRA重量分解的-LoRA",
+              "title": "2.6 DoRA：重量分解的 LoRA",
+              "level": 3
+            },
+            {
+              "id": "2.7-AdaLoRA自适应秩分配",
+              "title": "2.7 AdaLoRA：自适应秩分配",
+              "level": 3
+            },
+            {
+              "id": "2.8-QLoRA量化--LoRA-的天作之合",
+              "title": "2.8 QLoRA：量化 + LoRA 的天作之合",
+              "level": 3
+            },
+            {
+              "id": "2.9-实战使用-PEFT-库进行-LoRA-微调",
+              "title": "2.9 实战：使用 PEFT 库进行 LoRA 微调",
+              "level": 3
+            },
+            {
+              "id": "2.10-LoRA-权重的合并与部署",
+              "title": "2.10 LoRA 权重的合并与部署",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章压缩神通---模型量化",
+          "title": "第三章：压缩神通 — 模型量化",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-为什么需要量化",
+              "title": "3.1 为什么需要量化？",
+              "level": 3
+            },
+            {
+              "id": "3.2-数据类型详解",
+              "title": "3.2 数据类型详解",
+              "level": 3
+            },
+            {
+              "id": "3.3-量化的基本原理",
+              "title": "3.3 量化的基本原理",
+              "level": 3
+            },
+            {
+              "id": "3.4-Post-Training-Quantization-PTQ-实战",
+              "title": "3.4 Post-Training Quantization (PTQ) 实战",
+              "level": 3
+            },
+            {
+              "id": "3.5-NF4专为神经网络设计的-4-bit-量化",
+              "title": "3.5 NF4：专为神经网络设计的 4-bit 量化",
+              "level": 3
+            },
+            {
+              "id": "3.6-bitsandbytes量化实战工具",
+              "title": "3.6 bitsandbytes：量化实战工具",
+              "level": 3
+            },
+            {
+              "id": "3.7-量化对模型性能的影响",
+              "title": "3.7 量化对模型性能的影响",
+              "level": 3
+            },
+            {
+              "id": "3.8-量化方法选择指南",
+              "title": "3.8 量化方法选择指南",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章言出法随---Prompt-Engineering",
+          "title": "第四章：言出法随 — Prompt Engineering",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-Prompt-Engineering-的本质",
+              "title": "4.1 Prompt Engineering 的本质",
+              "level": 3
+            },
+            {
+              "id": "4.2-基础提示策略",
+              "title": "4.2 基础提示策略",
+              "level": 3
+            },
+            {
+              "id": "4.3-System-Prompt-与角色设定",
+              "title": "4.3 System Prompt 与角色设定",
+              "level": 3
+            },
+            {
+              "id": "4.4-高级-Prompt-技术",
+              "title": "4.4 高级 Prompt 技术",
+              "level": 3
+            },
+            {
+              "id": "4.5-Prompt-Injection当心外道侵袭",
+              "title": "4.5 Prompt Injection：当心外道侵袭",
+              "level": 3
+            },
+            {
+              "id": "4.6-Prompt-Engineering-实战技巧",
+              "title": "4.6 Prompt Engineering 实战技巧",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章垂域化形---领域专家模型实战",
+          "title": "第五章：垂域化形 — 领域专家模型实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-项目概述打造医疗问答专家模型",
+              "title": "5.1 项目概述：打造医疗问答专家模型",
+              "level": 3
+            },
+            {
+              "id": "5.2-第一步数据准备---精选药材",
+              "title": "5.2 第一步：数据准备 — 精选药材",
+              "level": 3
+            },
+            {
+              "id": "5.3-第二步QLoRA-微调训练",
+              "title": "5.3 第二步：QLoRA 微调训练",
+              "level": 3
+            },
+            {
+              "id": "5.4-第三步训练监控与调优",
+              "title": "5.4 第三步：训练监控与调优",
+              "level": 3
+            },
+            {
+              "id": "5.5-第四步模型评估",
+              "title": "5.5 第四步：模型评估",
+              "level": 3
+            },
+            {
+              "id": "5.6-第五步部署与上线",
+              "title": "5.6 第五步：部署与上线",
+              "level": 3
+            },
+            {
+              "id": "5.7-完整项目流程总结",
+              "title": "5.7 完整项目流程总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结与境界突破条件",
+          "title": "修炼总结与境界突破条件",
+          "level": 2,
+          "children": [
+            {
+              "id": "本卷修炼总结",
+              "title": "本卷修炼总结",
+              "level": 3
+            },
+            {
+              "id": "境界突破条件",
+              "title": "境界突破条件",
+              "level": 3
+            },
+            {
+              "id": "下一卷预告",
+              "title": "下一卷预告",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ALoRA-超参数速查表",
+          "title": "附录 A：LoRA 超参数速查表",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-B常见反噬错误速查",
+          "title": "附录 B：常见反噬（错误）速查",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-C推荐资源",
+          "title": "附录 C：推荐资源",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-DQLoRA-深度实战---单卡微调-7B-模型",
+          "title": "附录 D：QLoRA 深度实战 — 单卡微调 7B 模型",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-QLoRA-四大核心技术",
+              "title": "D.1 QLoRA 四大核心技术",
+              "level": 3
+            },
+            {
+              "id": "D.2-完整-QLoRA-微调代码",
+              "title": "D.2 完整 QLoRA 微调代码",
+              "level": 3
+            },
+            {
+              "id": "D.3-QLoRA-显存计算器",
+              "title": "D.3 QLoRA 显存计算器",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-E化形术进阶---LoRA-变体与选择",
+          "title": "附录 E：化形术进阶 — LoRA 变体与选择",
+          "level": 2,
+          "children": [
+            {
+              "id": "E.1-LoRA-变体全景",
+              "title": "E.1 LoRA 变体全景",
+              "level": 3
+            },
+            {
+              "id": "E.2-DoRA权重分解低秩适应",
+              "title": "E.2 DoRA：权重分解低秩适应",
+              "level": 3
+            },
+            {
+              "id": "E.3-AdaLoRA自适应秩分配",
+              "title": "E.3 AdaLoRA：自适应秩分配",
+              "level": 3
+            },
+            {
+              "id": "E.4-PEFT-方法选择决策树",
+              "title": "E.4 PEFT 方法选择决策树",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-FPrompt-Engineering-高阶技法",
+          "title": "附录 F：Prompt Engineering 高阶技法",
+          "level": 2,
+          "children": [
+            {
+              "id": "F.1-Chain-of-Thought-CoT思维链引导",
+              "title": "F.1 Chain-of-Thought (CoT)：思维链引导",
+              "level": 3
+            },
+            {
+              "id": "F.2-Few-shot-Prompting",
+              "title": "F.2 Few-shot Prompting",
+              "level": 3
+            },
+            {
+              "id": "F.3-System-Prompt-设计模式",
+              "title": "F.3 System Prompt 设计模式",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-G化形术补全---Prefix-TuningAdapter-与多-LoRA-合并",
+          "title": "附录 G：化形术补全 — Prefix Tuning、Adapter 与多 LoRA 合并",
+          "level": 2,
+          "children": [
+            {
+              "id": "G.1-Prefix-Tuning---前缀注入术",
+              "title": "G.1 Prefix Tuning — 前缀注入术",
+              "level": 3
+            },
+            {
+              "id": "G.2-P-Tuning-v2---深层前缀调优",
+              "title": "G.2 P-Tuning v2 — 深层前缀调优",
+              "level": 3
+            },
+            {
+              "id": "G.3-Adapter---适配器层插入术",
+              "title": "G.3 Adapter — 适配器层插入术",
+              "level": 3
+            },
+            {
+              "id": "G.4-多-LoRA-合并与切换---一炉多丹",
+              "title": "G.4 多 LoRA 合并与切换 — 一炉多丹",
+              "level": 3
+            },
+            {
+              "id": "G.5-LoRA-选择决策树",
+              "title": "G.5 LoRA 选择决策树",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--LoRA-数学直觉--DoRA-进展--工程决策树",
+          "title": "本卷增强补全（2026）— LoRA 数学直觉 · DoRA 进展 · 工程决策树",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-LoRA-的核心假设为什么低秩能撬动大模型",
+              "title": "1) LoRA 的核心假设：为什么“低秩”能撬动大模型？",
+              "level": 3
+            },
+            {
+              "id": "2-2024-新进展DoRAWeight-Decomposed-Low-Rank-Adaptation",
+              "title": "2) 2024 新进展：DoRA（Weight-Decomposed Low-Rank Adaptation）",
+              "level": 3
+            },
+            {
+              "id": "3-工程选型速记Best-Practices",
+              "title": "3) 工程选型速记（Best Practices）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 15
     },
     {
       "id": "vol05",
@@ -215,7 +2078,429 @@ window.__SITE_DATA__ = {
       "description": "DDP、DeepSpeed、混合精度、梯度累加",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 3073
+      "lines": 3102,
+      "sections": [
+        {
+          "id": "开篇引言",
+          "title": "开篇引言",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "目录",
+          "title": "目录",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章异火共鸣---显存与计算的本质",
+          "title": "第一章：异火共鸣 — 显存与计算的本质",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-异火的本质GPU-显存解剖",
+              "title": "1.1 异火的本质：GPU 显存解剖",
+              "level": 3
+            },
+            {
+              "id": "1.2-显存精确估算公式",
+              "title": "1.2 显存精确估算公式",
+              "level": 3
+            },
+            {
+              "id": "1.3-深入理解反噬OOM",
+              "title": "1.3 深入理解反噬（OOM）",
+              "level": 3
+            },
+            {
+              "id": "1.4-梯度检查点以时间换空间",
+              "title": "1.4 梯度检查点：以时间换空间",
+              "level": 3
+            },
+            {
+              "id": "1.5-代码显存分析实战",
+              "title": "1.5 代码：显存分析实战",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章混元真气---混合精度训练-Mixed-Precision",
+          "title": "第二章：混元真气 — 混合精度训练 (Mixed Precision)",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-数值精度FP32-vs-FP16-vs-BF16",
+              "title": "2.1 数值精度：FP32 vs FP16 vs BF16",
+              "level": 3
+            },
+            {
+              "id": "2.2-AMP自动混合精度的运作原理",
+              "title": "2.2 AMP：自动混合精度的运作原理",
+              "level": 3
+            },
+            {
+              "id": "2.3-完整代码示例",
+              "title": "2.3 完整代码示例",
+              "level": 3
+            },
+            {
+              "id": "2.4-混合精度训练的注意事项",
+              "title": "2.4 混合精度训练的注意事项",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章聚火成阵---分布式数据并行-DDP",
+          "title": "第三章：聚火成阵 — 分布式数据并行 (DDP)",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-DataParallel-vs-DistributedDataParallel",
+              "title": "3.1 DataParallel vs DistributedDataParallel",
+              "level": 3
+            },
+            {
+              "id": "3.2-通信后端",
+              "title": "3.2 通信后端",
+              "level": 3
+            },
+            {
+              "id": "3.3-DDP-核心概念",
+              "title": "3.3 DDP 核心概念",
+              "level": 3
+            },
+            {
+              "id": "3.4-完整代码从单卡到-DDP-的改造",
+              "title": "3.4 完整代码：从单卡到 DDP 的改造",
+              "level": 3
+            },
+            {
+              "id": "3.5-torchrun-启动命令",
+              "title": "3.5 torchrun 启动命令",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章梯度聚灵---梯度累加",
+          "title": "第四章：梯度聚灵 — 梯度累加",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-为什么需要梯度累加",
+              "title": "4.1 为什么需要梯度累加？",
+              "level": 3
+            },
+            {
+              "id": "4.2-实现细节",
+              "title": "4.2 实现细节",
+              "level": 3
+            },
+            {
+              "id": "4.3-完整代码示例",
+              "title": "4.3 完整代码示例",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章深渊之力---DeepSpeed-入门",
+          "title": "第五章：深渊之力 — DeepSpeed 入门",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-为什么需要-DeepSpeed",
+              "title": "5.1 为什么需要 DeepSpeed？",
+              "level": 3
+            },
+            {
+              "id": "5.2-ZeRO-三阶段详解",
+              "title": "5.2 ZeRO 三阶段详解",
+              "level": 3
+            },
+            {
+              "id": "5.3-ZeRO-Offload借力-CPU",
+              "title": "5.3 ZeRO-Offload：借力 CPU",
+              "level": 3
+            },
+            {
+              "id": "5.4-DeepSpeed-配置文件详解",
+              "title": "5.4 DeepSpeed 配置文件详解",
+              "level": 3
+            },
+            {
+              "id": "5.5-与-HuggingFace-Trainer-集成",
+              "title": "5.5 与 HuggingFace Trainer 集成",
+              "level": 3
+            },
+            {
+              "id": "5.6-实战配置推荐",
+              "title": "5.6 实战配置推荐",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第六章化翼飞升---多卡训练实战",
+          "title": "第六章：化翼飞升 — 多卡训练实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "6.1-综合实战从零搭建多卡训练",
+              "title": "6.1 综合实战：从零搭建多卡训练",
+              "level": 3
+            },
+            {
+              "id": "6.2-调试技巧",
+              "title": "6.2 调试技巧",
+              "level": 3
+            },
+            {
+              "id": "6.3-性能分析与优化",
+              "title": "6.3 性能分析与优化",
+              "level": 3
+            },
+            {
+              "id": "6.4-常见陷阱",
+              "title": "6.4 常见陷阱",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-AFSDP---PyTorch-原生分布式利器",
+          "title": "附录 A：FSDP — PyTorch 原生分布式利器",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-FSDP-vs-DeepSpeed-ZeRO",
+              "title": "A.1 FSDP vs DeepSpeed ZeRO",
+              "level": 3
+            },
+            {
+              "id": "A.2-FSDP-实战代码",
+              "title": "A.2 FSDP 实战代码",
+              "level": 3
+            },
+            {
+              "id": "A.3-分布式训练调试技巧",
+              "title": "A.3 分布式训练调试技巧",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B分布式训练效率优化",
+          "title": "附录 B：分布式训练效率优化",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-通信重叠与流水线",
+              "title": "B.1 通信重叠与流水线",
+              "level": 3
+            },
+            {
+              "id": "B.2-数据加载优化",
+              "title": "B.2 数据加载优化",
+              "level": 3
+            },
+            {
+              "id": "B.3-分布式训练性能基准",
+              "title": "B.3 分布式训练性能基准",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-CZeRO-3-深度实战---分片一切的极致功法",
+          "title": "附录 C：ZeRO-3 深度实战 — 分片一切的极致功法",
+          "level": 2,
+          "children": [
+            {
+              "id": "C.1-ZeRO-3-的本质",
+              "title": "C.1 ZeRO-3 的本质",
+              "level": 3
+            },
+            {
+              "id": "C.2-DeepSpeed-ZeRO-3-实战",
+              "title": "C.2 DeepSpeed ZeRO-3 实战",
+              "level": 3
+            },
+            {
+              "id": "C.3-ZeRO-3-的通信开销与取舍",
+              "title": "C.3 ZeRO-3 的通信开销与取舍",
+              "level": 3
+            },
+            {
+              "id": "C.4-ZeRO-3--CPU-Offload-极限省钱模式",
+              "title": "C.4 ZeRO-3 + CPU Offload 极限省钱模式",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-DColossal-AI---另一派分布式功法",
+          "title": "附录 D：Colossal-AI — 另一派分布式功法",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-Colossal-AI-简介",
+              "title": "D.1 Colossal-AI 简介",
+              "level": 3
+            },
+            {
+              "id": "D.2-Colossal-AI-快速上手",
+              "title": "D.2 Colossal-AI 快速上手",
+              "level": 3
+            },
+            {
+              "id": "D.3-Gemini-异构内存管理---Colossal-AI-独门绝技",
+              "title": "D.3 Gemini 异构内存管理 — Colossal-AI 独门绝技",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-EMoE-分布式训练---万火同炼",
+          "title": "附录 E：MoE 分布式训练 — 万火同炼",
+          "level": 2,
+          "children": [
+            {
+              "id": "E.1-MoE-的基本原理",
+              "title": "E.1 MoE 的基本原理",
+              "level": 3
+            },
+            {
+              "id": "E.2-Top-K-Router-机制",
+              "title": "E.2 Top-K Router 机制",
+              "level": 3
+            },
+            {
+              "id": "E.3-MoE-分布式训练策略",
+              "title": "E.3 MoE 分布式训练策略",
+              "level": 3
+            },
+            {
+              "id": "E.4-著名-MoE-模型一览",
+              "title": "E.4 著名 MoE 模型一览",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结",
+          "title": "修炼总结",
+          "level": 2,
+          "children": [
+            {
+              "id": "功法速查表",
+              "title": "功法速查表",
+              "level": 3
+            },
+            {
+              "id": "修炼路线推荐",
+              "title": "修炼路线推荐",
+              "level": 3
+            },
+            {
+              "id": "下一卷预告",
+              "title": "下一卷预告",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-FFSDP-深度实战---碎丹重铸术",
+          "title": "附录 F：FSDP 深度实战 — 碎丹重铸术",
+          "level": 2,
+          "children": [
+            {
+              "id": "F.1-FSDP-vs-DeepSpeed-ZeRO-3",
+              "title": "F.1 FSDP vs DeepSpeed ZeRO-3",
+              "level": 3
+            },
+            {
+              "id": "F.2-FSDP-完整实战",
+              "title": "F.2 FSDP 完整实战",
+              "level": 3
+            },
+            {
+              "id": "F.3-FSDP-显存分析",
+              "title": "F.3 FSDP 显存分析",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-G分布式通信优化---灵力传导加速",
+          "title": "附录 G：分布式通信优化 — 灵力传导加速",
+          "level": 2,
+          "children": [
+            {
+              "id": "G.1-通信原语详解",
+              "title": "G.1 通信原语详解",
+              "level": 3
+            },
+            {
+              "id": "G.2-通信优化技术",
+              "title": "G.2 通信优化技术",
+              "level": 3
+            },
+            {
+              "id": "G.3-通信瓶颈诊断",
+              "title": "G.3 通信瓶颈诊断",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-H容错与断点续训---修炼不中断术",
+          "title": "附录 H：容错与断点续训 — 修炼不中断术",
+          "level": 2,
+          "children": [
+            {
+              "id": "H.1-断点续训实现",
+              "title": "H.1 断点续训实现",
+              "level": 3
+            },
+            {
+              "id": "H.2-训练监控与告警",
+              "title": "H.2 训练监控与告警",
+              "level": 3
+            },
+            {
+              "id": "H.3-大规模训练容错策略",
+              "title": "H.3 大规模训练容错策略",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--吞吐延迟成本三角--监控与容错--工程闭环",
+          "title": "本卷增强补全（2026）— 吞吐/延迟/成本三角 · 监控与容错 · 工程闭环",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-训练系统的三角关系更快更省更稳不能同时拉满",
+              "title": "1) 训练系统的三角关系：更快、更省、更稳不能同时拉满",
+              "level": 3
+            },
+            {
+              "id": "2-Best-Practices分布式训练必备监控建议作为默认模板",
+              "title": "2) Best Practices：分布式训练必备监控（建议作为“默认模板”）",
+              "level": 3
+            },
+            {
+              "id": "3-可回填建议断点续训必须记录项",
+              "title": "3) 可回填建议：断点续训“必须记录项”",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 18
     },
     {
       "id": "vol06",
@@ -227,7 +2512,434 @@ window.__SITE_DATA__ = {
       "description": "SFT 体系、数据清洗、RAG 与向量数据库",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 4620
+      "lines": 4655,
+      "sections": [
+        {
+          "id": "开篇引言从化翼到凌空",
+          "title": "开篇引言：从化翼到凌空",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章药材洗炼---数据清洗工程",
+          "title": "第一章：药材洗炼 — 数据清洗工程",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-药材品质决定丹药品质",
+              "title": "1.1 药材品质决定丹药品质",
+              "level": 3
+            },
+            {
+              "id": "1.2-药材采集---数据收集策略",
+              "title": "1.2 药材采集 — 数据收集策略",
+              "level": 3
+            },
+            {
+              "id": "1.3-药材洗炼流水线---数据清洗-Pipeline",
+              "title": "1.3 药材洗炼流水线 — 数据清洗 Pipeline",
+              "level": 3
+            },
+            {
+              "id": "1.4-数据格式化---药材入炉前的最后处理",
+              "title": "1.4 数据格式化 — 药材入炉前的最后处理",
+              "level": 3
+            },
+            {
+              "id": "Instruction",
+              "title": "Instruction:",
+              "level": 3
+            },
+            {
+              "id": "Input",
+              "title": "Input:",
+              "level": 3
+            },
+            {
+              "id": "Response",
+              "title": "Response:",
+              "level": 3
+            },
+            {
+              "id": "1.5-数据混合策略---药材配比",
+              "title": "1.5 数据混合策略 — 药材配比",
+              "level": 3
+            },
+            {
+              "id": "1.6-工业级数据清洗工具",
+              "title": "1.6 工业级数据清洗工具",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章锻丹之术---SFT-监督微调体系",
+          "title": "第二章：锻丹之术 — SFT 监督微调体系",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-为何需要-SFT",
+              "title": "2.1 为何需要 SFT？",
+              "level": 3
+            },
+            {
+              "id": "2.2-SFT-vs-继续预训练-vs-RLHF何时使用何种功法",
+              "title": "2.2 SFT vs 继续预训练 vs RLHF：何时使用何种功法",
+              "level": 3
+            },
+            {
+              "id": "2.3-SFT-训练数据格式设计",
+              "title": "2.3 SFT 训练数据格式设计",
+              "level": 3
+            },
+            {
+              "id": "2.4-Loss-Masking---只炼精华",
+              "title": "2.4 Loss Masking — 只炼精华",
+              "level": 3
+            },
+            {
+              "id": "2.5-SFT-关键超参数",
+              "title": "2.5 SFT 关键超参数",
+              "level": 3
+            },
+            {
+              "id": "2.6-多任务-SFT---一炉多丹",
+              "title": "2.6 多任务 SFT — 一炉多丹",
+              "level": 3
+            },
+            {
+              "id": "2.7-SFT-过程中的评估",
+              "title": "2.7 SFT 过程中的评估",
+              "level": 3
+            },
+            {
+              "id": "2.8-完整-SFT-训练代码---使用-TRL-SFTTrainer",
+              "title": "2.8 完整 SFT 训练代码 — 使用 TRL SFTTrainer",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章万物追溯---RAG-检索增强生成",
+          "title": "第三章：万物追溯 — RAG 检索增强生成",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-为何需要-RAG",
+              "title": "3.1 为何需要 RAG？",
+              "level": 3
+            },
+            {
+              "id": "3.2-RAG-架构全貌",
+              "title": "3.2 RAG 架构全貌",
+              "level": 3
+            },
+            {
+              "id": "3.3-Embedding-模型---万物化数",
+              "title": "3.3 Embedding 模型 — 万物化数",
+              "level": 3
+            },
+            {
+              "id": "3.4-向量数据库---藏经阁",
+              "title": "3.4 向量数据库 — 藏经阁",
+              "level": 3
+            },
+            {
+              "id": "3.5-文档分块策略---药材切割之法",
+              "title": "3.5 文档分块策略 — 药材切割之法",
+              "level": 3
+            },
+            {
+              "id": "3.6-检索优化---精准寻宝",
+              "title": "3.6 检索优化 — 精准寻宝",
+              "level": 3
+            },
+            {
+              "id": "3.7-基于检索的上下文生成---引经据典",
+              "title": "3.7 基于检索的上下文生成 — 引经据典",
+              "level": 3
+            },
+            {
+              "id": "3.8-高级-RAG-技术",
+              "title": "3.8 高级 RAG 技术",
+              "level": 3
+            },
+            {
+              "id": "3.9-RAG-评估---丹药品质鉴定",
+              "title": "3.9 RAG 评估 — 丹药品质鉴定",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章工业丹房---完整问答系统实战",
+          "title": "第四章：工业丹房 — 完整问答系统实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-系统架构设计",
+              "title": "4.1 系统架构设计",
+              "level": 3
+            },
+            {
+              "id": "4.2-文档摄入流水线",
+              "title": "4.2 文档摄入流水线",
+              "level": 3
+            },
+            {
+              "id": "4.3-API-设计---用-FastAPI-构建服务",
+              "title": "4.3 API 设计 — 用 FastAPI 构建服务",
+              "level": 3
+            },
+            {
+              "id": "4.4-生产环境监控",
+              "title": "4.4 生产环境监控",
+              "level": 3
+            },
+            {
+              "id": "4.5-扩展性考量",
+              "title": "4.5 扩展性考量",
+              "level": 3
+            },
+            {
+              "id": "4.6-完整项目结构",
+              "title": "4.6 完整项目结构",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章缩骨功法---模型量化与推理加速",
+          "title": "第五章：缩骨功法 — 模型量化与推理加速",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-量化的本质---舍弃精度换取速度",
+              "title": "5.1 量化的本质 — 舍弃精度换取速度",
+              "level": 3
+            },
+            {
+              "id": "5.2-GPTQ---事后量化经典功法",
+              "title": "5.2 GPTQ — 事后量化经典功法",
+              "level": 3
+            },
+            {
+              "id": "5.3-AWQ---激活感知量化新法",
+              "title": "5.3 AWQ — 激活感知量化新法",
+              "level": 3
+            },
+            {
+              "id": "5.4-vLLM---高性能推理引擎",
+              "title": "5.4 vLLM — 高性能推理引擎",
+              "level": 3
+            },
+            {
+              "id": "5.5-GGUF---CPUGPU-混合推理格式",
+              "title": "5.5 GGUF — CPU/GPU 混合推理格式",
+              "level": 3
+            },
+            {
+              "id": "5.6-推理加速方案对比与选型",
+              "title": "5.6 推理加速方案对比与选型",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第六章神识探查---RAG-进阶重排序与高级检索",
+          "title": "第六章：神识探查 — RAG 进阶：重排序与高级检索",
+          "level": 2,
+          "children": [
+            {
+              "id": "6.1-为什么需要重排序",
+              "title": "6.1 为什么需要重排序？",
+              "level": 3
+            },
+            {
+              "id": "6.2-Bi-Encoder-vs-Cross-Encoder",
+              "title": "6.2 Bi-Encoder vs Cross-Encoder",
+              "level": 3
+            },
+            {
+              "id": "6.3-完整-RAG--Reranker-实战",
+              "title": "6.3 完整 RAG + Reranker 实战",
+              "level": 3
+            },
+            {
+              "id": "6.4-高级-RAG-技术概览",
+              "title": "6.4 高级 RAG 技术概览",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-AvLLM-部署完全指南",
+          "title": "附录 A：vLLM 部署完全指南",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-OpenAI-兼容-API-部署",
+              "title": "A.1 OpenAI 兼容 API 部署",
+              "level": 3
+            },
+            {
+              "id": "A.2-常用启动参数速查",
+              "title": "A.2 常用启动参数速查",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B量化精度评估方法论",
+          "title": "附录 B：量化精度评估方法论",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-C推理成本估算器",
+          "title": "附录 C：推理成本估算器",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-D凌空篇补充---SFT-训练技巧进阶",
+          "title": "附录 D：凌空篇补充 — SFT 训练技巧进阶",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-多阶段训练策略",
+              "title": "D.1 多阶段训练策略",
+              "level": 3
+            },
+            {
+              "id": "D.2-数据配比实验",
+              "title": "D.2 数据配比实验",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结与境界突破条件",
+          "title": "修炼总结与境界突破条件",
+          "level": 2,
+          "children": [
+            {
+              "id": "本卷修炼要点回顾",
+              "title": "本卷修炼要点回顾",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ESFT-高质量数据工程---药材炼制大全",
+          "title": "附录 E：SFT 高质量数据工程 — 药材炼制大全",
+          "level": 2,
+          "children": [
+            {
+              "id": "E.1-高质量-SFT-数据的标准",
+              "title": "E.1 高质量 SFT 数据的标准",
+              "level": 3
+            },
+            {
+              "id": "E.2-SFT-数据格式规范",
+              "title": "E.2 SFT 数据格式规范",
+              "level": 3
+            },
+            {
+              "id": "E.3-数据质量自动过滤管线",
+              "title": "E.3 数据质量自动过滤管线",
+              "level": 3
+            },
+            {
+              "id": "E.4-数据去重与多样性增强",
+              "title": "E.4 数据去重与多样性增强",
+              "level": 3
+            },
+            {
+              "id": "E.5-数据增强策略",
+              "title": "E.5 数据增强策略",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-FLLM-评估体系---丹药品质检验术",
+          "title": "附录 F：LLM 评估体系 — 丹药品质检验术",
+          "level": 2,
+          "children": [
+            {
+              "id": "F.1-评估指标体系",
+              "title": "F.1 评估指标体系",
+              "level": 3
+            },
+            {
+              "id": "F.2-自动评估框架",
+              "title": "F.2 自动评估框架",
+              "level": 3
+            },
+            {
+              "id": "F.3-评估流程管理",
+              "title": "F.3 评估流程管理",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-G偏好对齐进阶---排序微调",
+          "title": "附录 G：偏好对齐进阶 — 排序微调",
+          "level": 2,
+          "children": [
+            {
+              "id": "G.1-排序微调原理",
+              "title": "G.1 排序微调原理",
+              "level": 3
+            },
+            {
+              "id": "G.2-偏好数据构造",
+              "title": "G.2 偏好数据构造",
+              "level": 3
+            },
+            {
+              "id": "G.3-排序微调实战代码",
+              "title": "G.3 排序微调实战代码",
+              "level": 3
+            },
+            {
+              "id": "斗皇境界检验标准",
+              "title": "斗皇境界检验标准",
+              "level": 3
+            },
+            {
+              "id": "前方预告第七卷--空间篇斗宗",
+              "title": "前方预告：第七卷 · 空间篇（斗宗）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--RAG-评测体系--注入防护--可观测与上线闭环",
+          "title": "本卷增强补全（2026）— RAG 评测体系 · 注入防护 · 可观测与上线闭环",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-RAG-四段式主线建议作为本卷的总框架",
+              "title": "1) RAG 四段式主线（建议作为本卷的“总框架”）",
+              "level": 3
+            },
+            {
+              "id": "2-Best-PracticesRAG-的成功定义与指标必须自动化回归",
+              "title": "2) Best Practices：RAG 的成功定义与指标（必须自动化回归）",
+              "level": 3
+            },
+            {
+              "id": "3-必修安全提示注入与数据外泄防护RAG-特有风险",
+              "title": "3) 必修安全：提示注入与数据外泄防护（RAG 特有风险）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 16
     },
     {
       "id": "vol07",
@@ -239,7 +2951,368 @@ window.__SITE_DATA__ = {
       "description": "VLM 多模态、CLIP、Vision Encoder + LLM 融合",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 2619
+      "lines": 2649,
+      "sections": [
+        {
+          "id": "开篇引言从单一维度到空间撕裂",
+          "title": "开篇引言：从单一维度到空间撕裂",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章空间感知---计算机视觉基础回顾",
+          "title": "第一章：空间感知 — 计算机视觉基础回顾",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-从像素到语义视觉表示的演进",
+              "title": "1.1 从像素到语义：视觉表示的演进",
+              "level": 3
+            },
+            {
+              "id": "1.2-Vision-Transformer-ViT将图像拆分为-token",
+              "title": "1.2 Vision Transformer (ViT)：将图像拆分为 token",
+              "level": 3
+            },
+            {
+              "id": "1.3-ViT-变体与规模",
+              "title": "1.3 ViT 变体与规模",
+              "level": 3
+            },
+            {
+              "id": "1.4-预训练视觉编码器三大流派",
+              "title": "1.4 预训练视觉编码器：三大流派",
+              "level": 3
+            },
+            {
+              "id": "1.5-图像预处理进入视觉编码器之前",
+              "title": "1.5 图像预处理：进入视觉编码器之前",
+              "level": 3
+            },
+            {
+              "id": "1.6-特征提取从-Vision-Encoder-获取视觉表示",
+              "title": "1.6 特征提取：从 Vision Encoder 获取视觉表示",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章空间裂缝---CLIP-与对比学习",
+          "title": "第二章：空间裂缝 — CLIP 与对比学习",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-CLIP连接视觉与语言的桥梁",
+              "title": "2.1 CLIP：连接视觉与语言的桥梁",
+              "level": 3
+            },
+            {
+              "id": "2.2-CLIP-架构双塔编码器",
+              "title": "2.2 CLIP 架构：双塔编码器",
+              "level": 3
+            },
+            {
+              "id": "2.3-对比学习在混沌中建立秩序",
+              "title": "2.3 对比学习：在混沌中建立秩序",
+              "level": 3
+            },
+            {
+              "id": "2.4-InfoNCE-Loss空间裂缝的数学原理",
+              "title": "2.4 InfoNCE Loss：空间裂缝的数学原理",
+              "level": 3
+            },
+            {
+              "id": "2.5-CLIP-的训练规模",
+              "title": "2.5 CLIP 的训练规模",
+              "level": 3
+            },
+            {
+              "id": "2.6-零样本分类CLIP-的经典应用",
+              "title": "2.6 零样本分类：CLIP 的经典应用",
+              "level": 3
+            },
+            {
+              "id": "2.7-CLIP-的局限与改进者",
+              "title": "2.7 CLIP 的局限与改进者",
+              "level": 3
+            },
+            {
+              "id": "2.8-代码实战用-CLIP-进行图文匹配",
+              "title": "2.8 代码实战：用 CLIP 进行图文匹配",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章空间融合---多模态大模型架构",
+          "title": "第三章：空间融合 — 多模态大模型架构",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-核心挑战让文字修炼者看见",
+              "title": "3.1 核心挑战：让文字修炼者\"看见\"",
+              "level": 3
+            },
+            {
+              "id": "3.2-流派一投影映射---LLaVA-架构详解",
+              "title": "3.2 流派一：投影映射 — LLaVA 架构详解",
+              "level": 3
+            },
+            {
+              "id": "3.3-流派二查询桥接---BLIP-2-架构",
+              "title": "3.3 流派二：查询桥接 — BLIP-2 架构",
+              "level": 3
+            },
+            {
+              "id": "3.4-流派三交叉注意力---Flamingo-架构",
+              "title": "3.4 流派三：交叉注意力 — Flamingo 架构",
+              "level": 3
+            },
+            {
+              "id": "3.5-主流多模态大模型巡礼",
+              "title": "3.5 主流多模态大模型巡礼",
+              "level": 3
+            },
+            {
+              "id": "3.6-高分辨率处理动态分辨率与图像分块",
+              "title": "3.6 高分辨率处理：动态分辨率与图像分块",
+              "level": 3
+            },
+            {
+              "id": "3.7-LLaVA-完整前向传播流程",
+              "title": "3.7 LLaVA 完整前向传播流程",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章空间穿梭---多模态模型训练实战",
+          "title": "第四章：空间穿梭 — 多模态模型训练实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-实战目标",
+              "title": "4.1 实战目标",
+              "level": 3
+            },
+            {
+              "id": "4.2-环境准备",
+              "title": "4.2 环境准备",
+              "level": 3
+            },
+            {
+              "id": "4.3-数据准备图文指令对",
+              "title": "4.3 数据准备：图文指令对",
+              "level": 3
+            },
+            {
+              "id": "4.4-构建-Mini-LLaVA-模型",
+              "title": "4.4 构建 Mini-LLaVA 模型",
+              "level": 3
+            },
+            {
+              "id": "4.5-训练流程",
+              "title": "4.5 训练流程",
+              "level": 3
+            },
+            {
+              "id": "4.6-评估视觉问答基准",
+              "title": "4.6 评估：视觉问答基准",
+              "level": 3
+            },
+            {
+              "id": "4.7-使用现有-VLM-进行推理",
+              "title": "4.7 使用现有 VLM 进行推理",
+              "level": 3
+            },
+            {
+              "id": "4.8-多模态-LoRA-微调实战",
+              "title": "4.8 多模态 LoRA 微调实战",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章空间法则---多模态应用与前沿",
+          "title": "第五章：空间法则 — 多模态应用与前沿",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-图像理解与问答",
+              "title": "5.1 图像理解与问答",
+              "level": 3
+            },
+            {
+              "id": "5.2-文档与-OCR-理解",
+              "title": "5.2 文档与 OCR 理解",
+              "level": 3
+            },
+            {
+              "id": "5.3-视频理解时间维度的扩展",
+              "title": "5.3 视频理解：时间维度的扩展",
+              "level": 3
+            },
+            {
+              "id": "5.4-音频-语言模型听觉维度",
+              "title": "5.4 音频-语言模型：听觉维度",
+              "level": 3
+            },
+            {
+              "id": "5.5-全模态模型感知一切维度",
+              "title": "5.5 全模态模型：感知一切维度",
+              "level": 3
+            },
+            {
+              "id": "5.6-多模态幻觉问题",
+              "title": "5.6 多模态幻觉问题",
+              "level": 3
+            },
+            {
+              "id": "5.7-多模态模型的效率优化",
+              "title": "5.7 多模态模型的效率优化",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ACLIP-进阶---视觉-语言对齐深度剖析",
+          "title": "附录 A：CLIP 进阶 — 视觉-语言对齐深度剖析",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-对比学习拉近相似推开异己",
+              "title": "A.1 对比学习：拉近相似，推开异己",
+              "level": 3
+            },
+            {
+              "id": "A.2-CLIP-微调实战",
+              "title": "A.2 CLIP 微调实战",
+              "level": 3
+            },
+            {
+              "id": "A.3-多模态嵌入空间可视化",
+              "title": "A.3 多模态嵌入空间可视化",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-BLLaVA-原理---大语言视觉助手",
+          "title": "附录 B：LLaVA 原理 — 大语言视觉助手",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-LLaVA-架构解析",
+              "title": "B.1 LLaVA 架构解析",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-C空间实战进阶---Qwen2-VL-与视频理解",
+          "title": "附录 C：空间实战进阶 — Qwen2-VL 与视频理解",
+          "level": 2,
+          "children": [
+            {
+              "id": "C.1-Qwen2-VL新一代视觉语言模型",
+              "title": "C.1 Qwen2-VL：新一代视觉语言模型",
+              "level": 3
+            },
+            {
+              "id": "C.2-Qwen2-VL-微调实战",
+              "title": "C.2 Qwen2-VL 微调实战",
+              "level": 3
+            },
+            {
+              "id": "C.3-视频理解技术深度解析",
+              "title": "C.3 视频理解技术深度解析",
+              "level": 3
+            },
+            {
+              "id": "C.4-InternVL2视觉语言通用模型",
+              "title": "C.4 InternVL2：视觉语言通用模型",
+              "level": 3
+            },
+            {
+              "id": "C.5-多模态模型选型指南",
+              "title": "C.5 多模态模型选型指南",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结与境界突破条件",
+          "title": "修炼总结与境界突破条件",
+          "level": 2,
+          "children": [
+            {
+              "id": "本卷修炼回顾",
+              "title": "本卷修炼回顾",
+              "level": 3
+            },
+            {
+              "id": "斗宗境界能力矩阵",
+              "title": "斗宗境界能力矩阵",
+              "level": 3
+            },
+            {
+              "id": "境界突破条件进入第八卷九转篇---斗尊",
+              "title": "境界突破条件（进入第八卷：九转篇 — 斗尊）",
+              "level": 3
+            },
+            {
+              "id": "前路展望",
+              "title": "前路展望",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录推荐阅读与资源",
+          "title": "附录：推荐阅读与资源",
+          "level": 2,
+          "children": [
+            {
+              "id": "核心论文",
+              "title": "核心论文",
+              "level": 3
+            },
+            {
+              "id": "开源项目",
+              "title": "开源项目",
+              "level": 3
+            },
+            {
+              "id": "术语对照焚诀--技术",
+              "title": "术语对照（焚诀 ↔ 技术）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--多模态对齐目标--评测与失败模式--文档视频落地",
+          "title": "本卷增强补全（2026）— 多模态对齐目标 · 评测与失败模式 · 文档/视频落地",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-CLIP-对比学习InfoNCE最小公式与直觉",
+              "title": "1) CLIP 对比学习（InfoNCE）最小公式与直觉",
+              "level": 3
+            },
+            {
+              "id": "2-VLM-必须补齐的评测与失败模式培训读者最容易缺这块",
+              "title": "2) VLM 必须补齐的评测与失败模式（培训读者最容易缺这块）",
+              "level": 3
+            },
+            {
+              "id": "3-三条产业落地路线与第六卷合流",
+              "title": "3) 三条产业落地路线（与第六卷合流）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 12
     },
     {
       "id": "vol08",
@@ -251,7 +3324,435 @@ window.__SITE_DATA__ = {
       "description": "RLHF、PPO、DPO、安全对齐",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 2974
+      "lines": 3001,
+      "sections": [
+        {
+          "id": "开篇引言最痛苦的蜕变",
+          "title": "开篇引言：最痛苦的蜕变",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章人心法则---为什么需要对齐",
+          "title": "第一章：人心法则 — 为什么需要对齐",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-什么是对齐教你的造物理解是非",
+              "title": "1.1 什么是对齐：教你的造物理解是非",
+              "level": 3
+            },
+            {
+              "id": "1.2-原始模型的四大乱象",
+              "title": "1.2 原始模型的四大乱象",
+              "level": 3
+            },
+            {
+              "id": "1.3-对齐税力量与安全的权衡",
+              "title": "1.3 对齐税：力量与安全的权衡",
+              "level": 3
+            },
+            {
+              "id": "1.4-历史转折InstructGPT-与-RLHF-的诞生",
+              "title": "1.4 历史转折：InstructGPT 与 RLHF 的诞生",
+              "level": 3
+            },
+            {
+              "id": "1.5-HHH对齐的三大天条",
+              "title": "1.5 HHH：对齐的三大天条",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章天道裁决---奖励模型-Reward-Model",
+          "title": "第二章：天道裁决 — 奖励模型 (Reward Model)",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-什么是奖励模型",
+              "title": "2.1 什么是奖励模型",
+              "level": 3
+            },
+            {
+              "id": "2.2-人类偏好数据的收集",
+              "title": "2.2 人类偏好数据的收集",
+              "level": 3
+            },
+            {
+              "id": "2.3-Bradley-Terry-模型将偏好转化为概率",
+              "title": "2.3 Bradley-Terry 模型：将偏好转化为概率",
+              "level": 3
+            },
+            {
+              "id": "2.4-训练奖励模型",
+              "title": "2.4 训练奖励模型",
+              "level": 3
+            },
+            {
+              "id": "2.5-奖励欺骗Reward-Hacking当天道被蒙蔽",
+              "title": "2.5 奖励欺骗（Reward Hacking）：当天道被蒙蔽",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章第一转---PPO-Proximal-Policy-Optimization",
+          "title": "第三章：第一转 — PPO (Proximal Policy Optimization)",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-为什么需要强化学习",
+              "title": "3.1 为什么需要强化学习",
+              "level": 3
+            },
+            {
+              "id": "3.2-PPO-核心原理",
+              "title": "3.2 PPO 核心原理",
+              "level": 3
+            },
+            {
+              "id": "3.3-RLHF-的完整-Pipeline",
+              "title": "3.3 RLHF 的完整 Pipeline",
+              "level": 3
+            },
+            {
+              "id": "3.4-GAE广义优势估计",
+              "title": "3.4 GAE：广义优势估计",
+              "level": 3
+            },
+            {
+              "id": "3.5-PPO-的挑战与局限",
+              "title": "3.5 PPO 的挑战与局限",
+              "level": 3
+            },
+            {
+              "id": "3.6-使用-trl-库实现-PPO",
+              "title": "3.6 使用 trl 库实现 PPO",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章直指本心---DPO-Direct-Preference-Optimization",
+          "title": "第四章：直指本心 — DPO (Direct Preference Optimization)",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-DPO-的核心洞察",
+              "title": "4.1 DPO 的核心洞察",
+              "level": 3
+            },
+            {
+              "id": "4.2-DPO-的数学推导",
+              "title": "4.2 DPO 的数学推导",
+              "level": 3
+            },
+            {
+              "id": "4.3-DPO-损失函数",
+              "title": "4.3 DPO 损失函数",
+              "level": 3
+            },
+            {
+              "id": "4.4-DPO-vs-PPO优劣对比",
+              "title": "4.4 DPO vs PPO：优劣对比",
+              "level": 3
+            },
+            {
+              "id": "4.5-DPO-的超参数",
+              "title": "4.5 DPO 的超参数",
+              "level": 3
+            },
+            {
+              "id": "4.6-偏好数据的准备",
+              "title": "4.6 偏好数据的准备",
+              "level": 3
+            },
+            {
+              "id": "4.7-完整-DPO-训练代码",
+              "title": "4.7 完整 DPO 训练代码",
+              "level": 3
+            },
+            {
+              "id": "4.8-DPO-训练中的常见问题",
+              "title": "4.8 DPO 训练中的常见问题",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章万法归宗---对齐方法全景",
+          "title": "第五章：万法归宗 — 对齐方法全景",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-RLHF-变体",
+              "title": "5.1 RLHF 变体",
+              "level": 3
+            },
+            {
+              "id": "5.2-DPO-变体",
+              "title": "5.2 DPO 变体",
+              "level": 3
+            },
+            {
+              "id": "5.3-在线-vs-离线偏好优化",
+              "title": "5.3 在线 vs 离线偏好优化",
+              "level": 3
+            },
+            {
+              "id": "5.4-迭代对齐方法",
+              "title": "5.4 迭代对齐方法",
+              "level": 3
+            },
+            {
+              "id": "5.5-对齐方法全景对比表",
+              "title": "5.5 对齐方法全景对比表",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第六章安全结界---安全对齐-Safety-Alignment",
+          "title": "第六章：安全结界 — 安全对齐 (Safety Alignment)",
+          "level": 2,
+          "children": [
+            {
+              "id": "6.1-红队测试Red-Teaming对自己的造物出手",
+              "title": "6.1 红队测试（Red Teaming）：对自己的造物出手",
+              "level": 3
+            },
+            {
+              "id": "6.2-安全分类体系",
+              "title": "6.2 安全分类体系",
+              "level": 3
+            },
+            {
+              "id": "6.3-安全训练数据生成",
+              "title": "6.3 安全训练数据生成",
+              "level": 3
+            },
+            {
+              "id": "6.4-防护栏与内容过滤Guardrails",
+              "title": "6.4 防护栏与内容过滤（Guardrails）",
+              "level": 3
+            },
+            {
+              "id": "6.5-越狱攻击与防御Jailbreak",
+              "title": "6.5 越狱攻击与防御（Jailbreak）",
+              "level": 3
+            },
+            {
+              "id": "6.6-安全评测基准",
+              "title": "6.6 安全评测基准",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第七章九转圆满---对齐实战",
+          "title": "第七章：九转圆满 — 对齐实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "7.1-完整对齐-Pipeline",
+              "title": "7.1 完整对齐 Pipeline",
+              "level": 3
+            },
+            {
+              "id": "7.2-构建偏好数据集",
+              "title": "7.2 构建偏好数据集",
+              "level": 3
+            },
+            {
+              "id": "7.3-训练与评估",
+              "title": "7.3 训练与评估",
+              "level": 3
+            },
+            {
+              "id": "7.4-对齐质量监控清单",
+              "title": "7.4 对齐质量监控清单",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ARLHF-完整流水线实战",
+          "title": "附录 A：RLHF 完整流水线实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-阶段一SFT-监督微调",
+              "title": "A.1 阶段一：SFT 监督微调",
+              "level": 3
+            },
+            {
+              "id": "A.2-阶段二奖励模型训练",
+              "title": "A.2 阶段二：奖励模型训练",
+              "level": 3
+            },
+            {
+              "id": "A.3-阶段三PPO-强化学习优化",
+              "title": "A.3 阶段三：PPO 强化学习优化",
+              "level": 3
+            },
+            {
+              "id": "A.4-DPO-简化流程",
+              "title": "A.4 DPO 简化流程",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B对齐评估方法论",
+          "title": "附录 B：对齐评估方法论",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-CGRPO---Group-Relative-Policy-Optimization",
+          "title": "附录 C：GRPO — Group Relative Policy Optimization",
+          "level": 2,
+          "children": [
+            {
+              "id": "C.1-GRPO-的核心思想",
+              "title": "C.1 GRPO 的核心思想",
+              "level": 3
+            },
+            {
+              "id": "C.2-GRPO-数学原理",
+              "title": "C.2 GRPO 数学原理",
+              "level": 3
+            },
+            {
+              "id": "C.3-DeepSeek-R1-的训练流程",
+              "title": "C.3 DeepSeek-R1 的训练流程",
+              "level": 3
+            },
+            {
+              "id": "C.4-ORPO---无需参考模型的偏好优化",
+              "title": "C.4 ORPO — 无需参考模型的偏好优化",
+              "level": 3
+            },
+            {
+              "id": "C.5-Kahneman-Tversky-框架与-AI-对齐",
+              "title": "C.5 Kahneman-Tversky 框架与 AI 对齐",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结与境界突破条件",
+          "title": "修炼总结与境界突破条件",
+          "level": 2,
+          "children": [
+            {
+              "id": "九转修炼回顾",
+              "title": "九转修炼回顾",
+              "level": 3
+            },
+            {
+              "id": "关键公式速查",
+              "title": "关键公式速查",
+              "level": 3
+            },
+            {
+              "id": "境界突破条件",
+              "title": "境界突破条件",
+              "level": 3
+            },
+            {
+              "id": "推荐阅读",
+              "title": "推荐阅读",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-DConstitutional-AI---自律修炼法",
+          "title": "附录 D：Constitutional AI — 自律修炼法",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-Constitutional-AI-原理",
+              "title": "D.1 Constitutional AI 原理",
+              "level": 3
+            },
+            {
+              "id": "D.2-宪法原则设计",
+              "title": "D.2 宪法原则设计",
+              "level": 3
+            },
+            {
+              "id": "D.3-Constitutional-AI-完整流程",
+              "title": "D.3 Constitutional AI 完整流程",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ESTaR---自我进化修炼法",
+          "title": "附录 E：STaR — 自我进化修炼法",
+          "level": 2,
+          "children": [
+            {
+              "id": "E.1-STaR-原理",
+              "title": "E.1 STaR 原理",
+              "level": 3
+            },
+            {
+              "id": "E.2-STaR-训练实现",
+              "title": "E.2 STaR 训练实现",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-F红队测试---反噬预防术",
+          "title": "附录 F：红队测试 — 反噬预防术",
+          "level": 2,
+          "children": [
+            {
+              "id": "F.1-红队测试方法论",
+              "title": "F.1 红队测试方法论",
+              "level": 3
+            },
+            {
+              "id": "F.2-红队测试框架实现",
+              "title": "F.2 红队测试框架实现",
+              "level": 3
+            },
+            {
+              "id": "F.3-防御策略",
+              "title": "F.3 防御策略",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--对齐安全边界--偏好数据工程--红队运营闭环",
+          "title": "本卷增强补全（2026）— 对齐≠安全边界 · 偏好数据工程 · 红队运营闭环",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-关键边界对齐Alignment不等于安全Safety",
+              "title": "1) 关键边界：对齐（Alignment）不等于安全（Safety）",
+              "level": 3
+            },
+            {
+              "id": "2-偏好数据工程比算法更重要的地基",
+              "title": "2) 偏好数据工程：比算法更重要的“地基”",
+              "level": 3
+            },
+            {
+              "id": "3-Best-Practices对齐评测--红队运营闭环建议回填到卷末",
+              "title": "3) Best Practices：对齐评测 + 红队运营闭环（建议回填到卷末）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 16
     },
     {
       "id": "vol09",
@@ -263,7 +3764,416 @@ window.__SITE_DATA__ = {
       "description": "MoE、Flash Attention、Megatron-LM、长文本",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 3283
+      "lines": 3307,
+      "sections": [
+        {
+          "id": "开篇引言半步成神",
+          "title": "开篇引言：半步成神",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章万灵齐修---MoE-混合专家系统",
+          "title": "第一章：万灵齐修 — MoE 混合专家系统",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-密集模型的瓶颈一人承载万般斗气",
+              "title": "1.1 密集模型的瓶颈：一人承载万般斗气",
+              "level": 3
+            },
+            {
+              "id": "1.2-MoE-架构总览万灵共体",
+              "title": "1.2 MoE 架构总览：万灵共体",
+              "level": 3
+            },
+            {
+              "id": "1.3-门控机制万灵阵眼的运作",
+              "title": "1.3 门控机制：万灵阵眼的运作",
+              "level": 3
+            },
+            {
+              "id": "1.4-负载均衡防止灵体沉睡",
+              "title": "1.4 负载均衡：防止灵体沉睡",
+              "level": 3
+            },
+            {
+              "id": "1.5-专家并行万灵分居各处",
+              "title": "1.5 专家并行：万灵分居各处",
+              "level": 3
+            },
+            {
+              "id": "1.6-经典-MoE-架构深度剖析",
+              "title": "1.6 经典 MoE 架构深度剖析",
+              "level": 3
+            },
+            {
+              "id": "1.7-MoE-的优势与挑战",
+              "title": "1.7 MoE 的优势与挑战",
+              "level": 3
+            },
+            {
+              "id": "1.8-代码实战手写简易-MoE-层",
+              "title": "1.8 代码实战：手写简易 MoE 层",
+              "level": 3
+            },
+            {
+              "id": "1.9-本章小结",
+              "title": "1.9 本章小结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章瞬息万里---Flash-Attention",
+          "title": "第二章：瞬息万里 — Flash Attention",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-标准-Attention-的瓶颈经脉淤塞",
+              "title": "2.1 标准 Attention 的瓶颈：经脉淤塞",
+              "level": 3
+            },
+            {
+              "id": "2.2-GPU-内存层次丹炉内部的经脉分布",
+              "title": "2.2 GPU 内存层次：丹炉内部的经脉分布",
+              "level": 3
+            },
+            {
+              "id": "2.3-Flash-Attention-核心思想分块计算与重算策略",
+              "title": "2.3 Flash Attention 核心思想：分块计算与重算策略",
+              "level": 3
+            },
+            {
+              "id": "2.4-Flash-Attention-2更上一层楼",
+              "title": "2.4 Flash Attention 2：更上一层楼",
+              "level": 3
+            },
+            {
+              "id": "2.5-Flash-Attention-3极致优化",
+              "title": "2.5 Flash Attention 3：极致优化",
+              "level": 3
+            },
+            {
+              "id": "2.6-实战在-PyTorch-中使用-Flash-Attention",
+              "title": "2.6 实战：在 PyTorch 中使用 Flash Attention",
+              "level": 3
+            },
+            {
+              "id": "2.7-本章小结",
+              "title": "2.7 本章小结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章长河无尽---长文本处理技术",
+          "title": "第三章：长河无尽 — 长文本处理技术",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-为什么长上下文如此重要",
+              "title": "3.1 为什么长上下文如此重要",
+              "level": 3
+            },
+            {
+              "id": "3.2-位置编码让模型知道在哪里",
+              "title": "3.2 位置编码：让模型知道\"在哪里\"",
+              "level": 3
+            },
+            {
+              "id": "3.3-RoPE-扩展技术突破训练长度限制",
+              "title": "3.3 RoPE 扩展技术：突破训练长度限制",
+              "level": 3
+            },
+            {
+              "id": "3.4-Ring-Attention分布式长序列处理",
+              "title": "3.4 Ring Attention：分布式长序列处理",
+              "level": 3
+            },
+            {
+              "id": "3.5-稀疏注意力模式",
+              "title": "3.5 稀疏注意力模式",
+              "level": 3
+            },
+            {
+              "id": "3.6-训练-vs-推理上下文长度",
+              "title": "3.6 训练 vs 推理上下文长度",
+              "level": 3
+            },
+            {
+              "id": "3.7-本章小结",
+              "title": "3.7 本章小结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章开天辟地---Megatron-LM-分布式预训练",
+          "title": "第四章：开天辟地 — Megatron-LM 分布式预训练",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-为什么需要模型并行",
+              "title": "4.1 为什么需要模型并行",
+              "level": 3
+            },
+            {
+              "id": "4.2-张量并行Tensor-Parallelism-TP",
+              "title": "4.2 张量并行（Tensor Parallelism, TP）",
+              "level": 3
+            },
+            {
+              "id": "4.3-流水线并行Pipeline-Parallelism-PP",
+              "title": "4.3 流水线并行（Pipeline Parallelism, PP）",
+              "level": 3
+            },
+            {
+              "id": "4.4-3D-并行DP-x-TP-x-PP",
+              "title": "4.4 3D 并行：DP x TP x PP",
+              "level": 3
+            },
+            {
+              "id": "4.5-序列并行Sequence-Parallelism-SP",
+              "title": "4.5 序列并行（Sequence Parallelism, SP）",
+              "level": 3
+            },
+            {
+              "id": "4.6-Megatron-LM-框架总览",
+              "title": "4.6 Megatron-LM 框架总览",
+              "level": 3
+            },
+            {
+              "id": "4.7-通信模式与优化",
+              "title": "4.7 通信模式与优化",
+              "level": 3
+            },
+            {
+              "id": "4.8-配置选择指南",
+              "title": "4.8 配置选择指南",
+              "level": 3
+            },
+            {
+              "id": "4.9-本章小结",
+              "title": "4.9 本章小结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章铸造神器---从零预训练实战",
+          "title": "第五章：铸造神器 — 从零预训练实战",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-预训练数据准备药材收集与炼制",
+              "title": "5.1 预训练数据准备：药材收集与炼制",
+              "level": 3
+            },
+            {
+              "id": "5.2-模型架构决策",
+              "title": "5.2 模型架构决策",
+              "level": 3
+            },
+            {
+              "id": "5.3-训练配方Training-Recipe",
+              "title": "5.3 训练配方（Training Recipe）",
+              "level": 3
+            },
+            {
+              "id": "5.4-Scaling-Laws炼丹的物理定律",
+              "title": "5.4 Scaling Laws：炼丹的物理定律",
+              "level": 3
+            },
+            {
+              "id": "5.5-监控与评估",
+              "title": "5.5 监控与评估",
+              "level": 3
+            },
+            {
+              "id": "5.6-基础设施与容错",
+              "title": "5.6 基础设施与容错",
+              "level": 3
+            },
+            {
+              "id": "5.7-成本估算参考",
+              "title": "5.7 成本估算参考",
+              "level": 3
+            },
+            {
+              "id": "5.8-完整预训练流程总结",
+              "title": "5.8 完整预训练流程总结",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ARoPE-与位置编码进化论",
+          "title": "附录 A：RoPE 与位置编码进化论",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-位置编码演进路线",
+              "title": "A.1 位置编码演进路线",
+              "level": 3
+            },
+            {
+              "id": "A.2-RoPE旋转位置编码原理",
+              "title": "A.2 RoPE（旋转位置编码）原理",
+              "level": 3
+            },
+            {
+              "id": "A.3-位置编码对比",
+              "title": "A.3 位置编码对比",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-BFlash-Attention-深度剖析",
+          "title": "附录 B：Flash Attention 深度剖析",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-为何-Flash-Attention-能加速",
+              "title": "B.1 为何 Flash Attention 能加速？",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-C长文本处理技术全景",
+          "title": "附录 C：长文本处理技术全景",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录-DRing-Attention---环形注意力与近无限上下文",
+          "title": "附录 D：Ring Attention — 环形注意力与近无限上下文",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-Ring-Attention-原理",
+              "title": "D.1 Ring Attention 原理",
+              "level": 3
+            },
+            {
+              "id": "D.2-Ring-Attention-伪代码实现",
+              "title": "D.2 Ring Attention 伪代码实现",
+              "level": 3
+            },
+            {
+              "id": "D.3-Sequence-Parallelism---序列并行",
+              "title": "D.3 Sequence Parallelism — 序列并行",
+              "level": 3
+            },
+            {
+              "id": "D.4-推测解码---加速推理的黑科技",
+              "title": "D.4 推测解码 — 加速推理的黑科技",
+              "level": 3
+            },
+            {
+              "id": "D.5-KV-Cache-压缩技术",
+              "title": "D.5 KV Cache 压缩技术",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结与境界突破条件",
+          "title": "修炼总结与境界突破条件",
+          "level": 2,
+          "children": [
+            {
+              "id": "本卷知识图谱",
+              "title": "本卷知识图谱",
+              "level": 3
+            },
+            {
+              "id": "境界突破条件",
+              "title": "境界突破条件",
+              "level": 3
+            },
+            {
+              "id": "推荐修炼资源",
+              "title": "推荐修炼资源",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-D长上下文推理---万里神识术",
+          "title": "附录 D：长上下文推理 — 万里神识术",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-长上下文的核心挑战",
+              "title": "D.1 长上下文的核心挑战",
+              "level": 3
+            },
+            {
+              "id": "D.2-长上下文训练策略",
+              "title": "D.2 长上下文训练策略",
+              "level": 3
+            },
+            {
+              "id": "D.3-Needle-in-a-Haystack-评估",
+              "title": "D.3 Needle-in-a-Haystack 评估",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-ERAG-深度融合---万物通灵术",
+          "title": "附录 E：RAG 深度融合 — 万物通灵术",
+          "level": 2,
+          "children": [
+            {
+              "id": "E.1-高级-RAG-架构",
+              "title": "E.1 高级 RAG 架构",
+              "level": 3
+            },
+            {
+              "id": "E.2-混合检索实现",
+              "title": "E.2 混合检索实现",
+              "level": 3
+            },
+            {
+              "id": "E.3-RAG-评估指标",
+              "title": "E.3 RAG 评估指标",
+              "level": 3
+            },
+            {
+              "id": "E.4-推理优化推测解码",
+              "title": "E.4 推理优化：推测解码",
+              "level": 3
+            },
+            {
+              "id": "下一卷预告",
+              "title": "下一卷预告",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--硬件算子并行主线--FlashAttention-3--MoE-成本模型",
+          "title": "本卷增强补全（2026）— 硬件×算子×并行主线 · FlashAttention-3 · MoE 成本模型",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-FlashAttention-32024为什么它代表新硬件时代的注意力优化",
+              "title": "1) FlashAttention-3（2024）：为什么它代表“新硬件时代的注意力优化”",
+              "level": 3
+            },
+            {
+              "id": "2-MoE-工程化三问建议回填到-MoE-章节末",
+              "title": "2) MoE 工程化三问（建议回填到 MoE 章节末）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 14
     },
     {
       "id": "vol10",
@@ -275,7 +4185,400 @@ window.__SITE_DATA__ = {
       "description": "自进化算法、多模态原生大统一、逻辑推理突破",
       "isAppendix": false,
       "icon": "📖",
-      "lines": 2894
+      "lines": 2922,
+      "sections": [
+        {
+          "id": "写在最前",
+          "title": "写在最前",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "目录",
+          "title": "目录",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章推理之道---逻辑推理的本质突破",
+          "title": "第一章：推理之道 — 逻辑推理的本质突破",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-从背诵到推理LLM-的根本局限",
+              "title": "1.1 从背诵到推理：LLM 的根本局限",
+              "level": 3
+            },
+            {
+              "id": "1.2-Chain-of-Thought让模型展示思考过程",
+              "title": "1.2 Chain-of-Thought：让模型\"展示思考过程\"",
+              "level": 3
+            },
+            {
+              "id": "1.3-Test-Time-Compute推理时的算力投入",
+              "title": "1.3 Test-Time Compute：推理时的算力投入",
+              "level": 3
+            },
+            {
+              "id": "1.4-Process-Reward-Models-vs-Outcome-Reward-Models",
+              "title": "1.4 Process Reward Models vs Outcome Reward Models",
+              "level": 3
+            },
+            {
+              "id": "1.5-推理时搜索算法",
+              "title": "1.5 推理时搜索算法",
+              "level": 3
+            },
+            {
+              "id": "1.6-推理基准测试",
+              "title": "1.6 推理基准测试",
+              "level": 3
+            },
+            {
+              "id": "1.7-当前局限与开放问题",
+              "title": "1.7 当前局限与开放问题",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章万法归一---多模态原生统一架构",
+          "title": "第二章：万法归一 — 多模态原生统一架构",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-从拼接到融合多模态的进化之路",
+              "title": "2.1 从\"拼接\"到\"融合\"：多模态的进化之路",
+              "level": 3
+            },
+            {
+              "id": "2.2-模态的统一-Token-化",
+              "title": "2.2 模态的统一 Token 化",
+              "level": 3
+            },
+            {
+              "id": "2.3-统一训练目标",
+              "title": "2.3 统一训练目标",
+              "level": 3
+            },
+            {
+              "id": "2.4-代表性模型深度解析",
+              "title": "2.4 代表性模型深度解析",
+              "level": 3
+            },
+            {
+              "id": "2.5-世界模型与物理理解",
+              "title": "2.5 世界模型与物理理解",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章自我进化---AI-Agent-与自主系统",
+          "title": "第三章：自我进化 — AI Agent 与自主系统",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-LLM-Agent-的基础架构",
+              "title": "3.1 LLM Agent 的基础架构",
+              "level": 3
+            },
+            {
+              "id": "3.2-多-Agent-系统与协作",
+              "title": "3.2 多 Agent 系统与协作",
+              "level": 3
+            },
+            {
+              "id": "3.3-自我改进AI-进化的核心",
+              "title": "3.3 自我改进：AI 进化的核心",
+              "level": 3
+            },
+            {
+              "id": "3.4-代码生成与执行-Agent",
+              "title": "3.4 代码生成与执行 Agent",
+              "level": 3
+            },
+            {
+              "id": "3.5-AutoML-与神经架构搜索",
+              "title": "3.5 AutoML 与神经架构搜索",
+              "level": 3
+            },
+            {
+              "id": "3.6-AI-for-AI模型改进模型",
+              "title": "3.6 AI for AI：模型改进模型",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章斗帝之路---AGI-的理论探索",
+          "title": "第四章：斗帝之路 — AGI 的理论探索",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-AGI-的定义之争",
+              "title": "4.1 AGI 的定义之争",
+              "level": 3
+            },
+            {
+              "id": "4.2-Scaling-Laws-及其极限",
+              "title": "4.2 Scaling Laws 及其极限",
+              "level": 3
+            },
+            {
+              "id": "4.3-涌现能力与能力阈值",
+              "title": "4.3 涌现能力与能力阈值",
+              "level": 3
+            },
+            {
+              "id": "4.4-当前-AI-的核心缺陷",
+              "title": "4.4 当前 AI 的核心缺陷",
+              "level": 3
+            },
+            {
+              "id": "4.5-AI-安全斗帝之剑的双刃",
+              "title": "4.5 AI 安全：斗帝之剑的双刃",
+              "level": 3
+            },
+            {
+              "id": "4.6-哲学思考",
+              "title": "4.6 哲学思考",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章创世之力---世界模型与视频生成",
+          "title": "第五章：创世之力 — 世界模型与视频生成",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-什么是世界模型",
+              "title": "5.1 什么是世界模型？",
+              "level": 3
+            },
+            {
+              "id": "5.2-Sora---视频生成的世界模拟器",
+              "title": "5.2 Sora — 视频生成的世界模拟器",
+              "level": 3
+            },
+            {
+              "id": "5.3-视频生成模型的评估维度",
+              "title": "5.3 视频生成模型的评估维度",
+              "level": 3
+            },
+            {
+              "id": "5.4-从视频生成到世界理解",
+              "title": "5.4 从视频生成到世界理解",
+              "level": 3
+            },
+            {
+              "id": "5.5-扩散模型的统一视角",
+              "title": "5.5 扩散模型的统一视角",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第六章造物之手---AI-Agent-实战框架",
+          "title": "第六章：造物之手 — AI Agent 实战框架",
+          "level": 2,
+          "children": [
+            {
+              "id": "6.1-AI-Agent-架构全景",
+              "title": "6.1 AI Agent 架构全景",
+              "level": 3
+            },
+            {
+              "id": "6.2-ReAct-模式---推理与行动结合",
+              "title": "6.2 ReAct 模式 — 推理与行动结合",
+              "level": 3
+            },
+            {
+              "id": "6.3-Function-Calling---现代-Agent-的工具接口",
+              "title": "6.3 Function Calling — 现代 Agent 的工具接口",
+              "level": 3
+            },
+            {
+              "id": "6.4-多-Agent-协作---团队作战",
+              "title": "6.4 多 Agent 协作 — 团队作战",
+              "level": 3
+            },
+            {
+              "id": "6.5-Agent-安全---约束与护栏",
+              "title": "6.5 Agent 安全 — 约束与护栏",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "修炼总结",
+          "title": "修炼总结",
+          "level": 2,
+          "children": [
+            {
+              "id": "我们已经走了多远",
+              "title": "我们已经走了多远？",
+              "level": 3
+            },
+            {
+              "id": "通往斗帝的可能路径",
+              "title": "通往斗帝的可能路径",
+              "level": 3
+            },
+            {
+              "id": "给修炼者的最后忠告",
+              "title": "给修炼者的最后忠告",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-AAGI-路线图与开放问题",
+          "title": "附录 A：AGI 路线图与开放问题",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.1-通向-AGI-的五大路线",
+              "title": "A.1 通向 AGI 的五大路线",
+              "level": 3
+            },
+            {
+              "id": "A.2-AI-安全与对齐的前沿挑战",
+              "title": "A.2 AI 安全与对齐的前沿挑战",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "参考文献与延伸阅读",
+          "title": "参考文献与延伸阅读",
+          "level": 2,
+          "children": [
+            {
+              "id": "推理与思考模型",
+              "title": "推理与思考模型",
+              "level": 3
+            },
+            {
+              "id": "多模态统一",
+              "title": "多模态统一",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-BWorld-Model---天地法则感知",
+          "title": "附录 B：World Model — 天地法则感知",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-World-Model-概念",
+              "title": "B.1 World Model 概念",
+              "level": 3
+            },
+            {
+              "id": "B.2-JEPA-架构",
+              "title": "B.2 JEPA 架构",
+              "level": 3
+            },
+            {
+              "id": "B.3-视频世界模型",
+              "title": "B.3 视频世界模型",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-C自我改进闭环---永动机式修炼",
+          "title": "附录 C：自我改进闭环 — 永动机式修炼",
+          "level": 2,
+          "children": [
+            {
+              "id": "C.1-自我改进范式",
+              "title": "C.1 自我改进范式",
+              "level": 3
+            },
+            {
+              "id": "C.2-Self-Play-自我对弈",
+              "title": "C.2 Self-Play 自我对弈",
+              "level": 3
+            },
+            {
+              "id": "C.3-Self-Instruct-自动指令生成",
+              "title": "C.3 Self-Instruct 自动指令生成",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-DAI-安全对齐前沿---天道守护术",
+          "title": "附录 D：AI 安全对齐前沿 — 天道守护术",
+          "level": 2,
+          "children": [
+            {
+              "id": "D.1-可解释性Interpretability",
+              "title": "D.1 可解释性（Interpretability）",
+              "level": 3
+            },
+            {
+              "id": "D.2-AI-安全评估框架",
+              "title": "D.2 AI 安全评估框架",
+              "level": 3
+            },
+            {
+              "id": "D.3-超级智能对齐",
+              "title": "D.3 超级智能对齐",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B帝境深度修炼",
+          "title": "附录 B：帝境深度修炼",
+          "level": 2,
+          "children": [
+            {
+              "id": "Agent-与自我进化",
+              "title": "Agent 与自我进化",
+              "level": 3
+            },
+            {
+              "id": "Scaling-Laws-与-AGI-理论",
+              "title": "Scaling Laws 与 AGI 理论",
+              "level": 3
+            },
+            {
+              "id": "AI-安全",
+              "title": "AI 安全",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--推理时算力TTC-Agent-可靠性--可教学最小系统",
+          "title": "本卷增强补全（2026）— 推理时算力（TTC）· Agent 可靠性 · 可教学最小系统",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-从-Prompt-技巧到-Test-Time-Compute推理时算力投入",
+              "title": "1) 从 Prompt 技巧到 Test-Time Compute（推理时算力投入）",
+              "level": 3
+            },
+            {
+              "id": "2-Agent-可靠性四类失败模式与对策建议回填到-Agent-章节末",
+              "title": "2) Agent 可靠性：四类失败模式与对策（建议回填到 Agent 章节末）",
+              "level": 3
+            },
+            {
+              "id": "3-可教学的三个最小项目建议作为课程作业实训",
+              "title": "3) 可教学的三个最小项目（建议作为课程作业/实训）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 16
     },
     {
       "id": "huofire",
@@ -287,7 +4590,285 @@ window.__SITE_DATA__ = {
       "description": "GPU 参数全录：从 RTX 3060 到 H200",
       "isAppendix": true,
       "icon": "🔥",
-      "lines": 929
+      "lines": 948,
+      "sections": [
+        {
+          "id": "写在最前",
+          "title": "写在最前",
+          "level": 2,
+          "children": [
+            {
+              "id": "术语对照",
+              "title": "术语对照",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "目录",
+          "title": "目录",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "异火品阶总览",
+          "title": "异火品阶总览",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "消费级异火地阶--GeForce-RTX-系列",
+          "title": "消费级异火（地阶）— GeForce RTX 系列",
+          "level": 2,
+          "children": [
+            {
+              "id": "RTX-3060-12GB---入门之火",
+              "title": "RTX 3060 12GB — 入门之火",
+              "level": 3
+            },
+            {
+              "id": "RTX-3070-8GB---学徒之火",
+              "title": "RTX 3070 8GB — 学徒之火",
+              "level": 3
+            },
+            {
+              "id": "RTX-3080-10GB---进阶之火",
+              "title": "RTX 3080 10GB — 进阶之火",
+              "level": 3
+            },
+            {
+              "id": "RTX-3090-24GB---研究之火",
+              "title": "RTX 3090 24GB — 研究之火",
+              "level": 3
+            },
+            {
+              "id": "RTX-4060-8GB---新生之火",
+              "title": "RTX 4060 8GB — 新生之火",
+              "level": 3
+            },
+            {
+              "id": "RTX-4070-12GB---平衡之火",
+              "title": "RTX 4070 12GB — 平衡之火",
+              "level": 3
+            },
+            {
+              "id": "RTX-4080-16GB---精锐之火",
+              "title": "RTX 4080 16GB — 精锐之火",
+              "level": 3
+            },
+            {
+              "id": "RTX-4090-24GB---地阶之巅",
+              "title": "RTX 4090 24GB — 地阶之巅",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "专业级异火天阶--数据中心-GPU",
+          "title": "专业级异火（天阶）— 数据中心 GPU",
+          "level": 2,
+          "children": [
+            {
+              "id": "NVIDIA-A100-40GB---天阶入门",
+              "title": "NVIDIA A100 40GB — 天阶入门",
+              "level": 3
+            },
+            {
+              "id": "NVIDIA-A100-80GB---天阶中坚",
+              "title": "NVIDIA A100 80GB — 天阶中坚",
+              "level": 3
+            },
+            {
+              "id": "NVIDIA-H100-80GB---天阶之王",
+              "title": "NVIDIA H100 80GB — 天阶之王",
+              "level": 3
+            },
+            {
+              "id": "NVIDIA-H200-141GB---显存之王",
+              "title": "NVIDIA H200 141GB — 显存之王",
+              "level": 3
+            },
+            {
+              "id": "NVIDIA-B100---次世代之火",
+              "title": "NVIDIA B100 — 次世代之火",
+              "level": 3
+            },
+            {
+              "id": "NVIDIA-B200---天阶之巅",
+              "title": "NVIDIA B200 — 天阶之巅",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "详细参数对比表",
+          "title": "详细参数对比表",
+          "level": 2,
+          "children": [
+            {
+              "id": "消费级-GPU-对比",
+              "title": "消费级 GPU 对比",
+              "level": 3
+            },
+            {
+              "id": "数据中心-GPU-对比",
+              "title": "数据中心 GPU 对比",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "异火选择指南",
+          "title": "异火选择指南",
+          "level": 2,
+          "children": [
+            {
+              "id": "场景一入门学习斗之气--斗者",
+              "title": "场景一：入门学习（斗之气 → 斗者）",
+              "level": 3
+            },
+            {
+              "id": "场景二LLM-微调斗师--斗灵",
+              "title": "场景二：LLM 微调（斗师 → 斗灵）",
+              "level": 3
+            },
+            {
+              "id": "场景三模型推理部署实用化",
+              "title": "场景三：模型推理部署（实用化）",
+              "level": 3
+            },
+            {
+              "id": "场景四大规模预训练斗宗--斗帝",
+              "title": "场景四：大规模预训练（斗宗 → 斗帝）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "模型显存需求估算",
+          "title": "模型显存需求估算",
+          "level": 2,
+          "children": [
+            {
+              "id": "显存估算公式",
+              "title": "显存估算公式",
+              "level": 3
+            },
+            {
+              "id": "常见模型显存需求",
+              "title": "常见模型显存需求",
+              "level": 3
+            },
+            {
+              "id": "哪张卡能跑什么",
+              "title": "哪张卡能跑什么？",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "多火联炼多-GPU-并行",
+          "title": "多火联炼（多 GPU 并行）",
+          "level": 2,
+          "children": [
+            {
+              "id": "多-GPU-并行策略",
+              "title": "多 GPU 并行策略",
+              "level": 3
+            },
+            {
+              "id": "多-GPU-互联带宽对比",
+              "title": "多 GPU 互联带宽对比",
+              "level": 3
+            },
+            {
+              "id": "消费级多-GPU-注意事项",
+              "title": "消费级多 GPU 注意事项",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "云端异火租赁指南",
+          "title": "云端异火租赁指南",
+          "level": 2,
+          "children": [
+            {
+              "id": "主流云端-GPU-平台",
+              "title": "主流云端 GPU 平台",
+              "level": 3
+            },
+            {
+              "id": "云端异火使用建议",
+              "title": "云端异火使用建议",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "异火选购决策树",
+          "title": "异火选购决策树",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "附录异火冷知识",
+          "title": "附录：异火冷知识",
+          "level": 2,
+          "children": [
+            {
+              "id": "为什么-NVIDIA-一家独大",
+              "title": "为什么 NVIDIA 一家独大？",
+              "level": 3
+            },
+            {
+              "id": "BF16-vs-FP16选哪个",
+              "title": "BF16 vs FP16：选哪个？",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录2024-2025-新品异火录",
+          "title": "附录：2024-2025 新品异火录",
+          "level": 2,
+          "children": [
+            {
+              "id": "NVIDIA-Blackwell-系列2024-2025",
+              "title": "NVIDIA Blackwell 系列（2024-2025）",
+              "level": 3
+            },
+            {
+              "id": "国产异火新秀",
+              "title": "国产异火新秀",
+              "level": 3
+            },
+            {
+              "id": "2025-2026-新品异火详解",
+              "title": "2025-2026 新品异火详解",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--选型方法论从参数表到成本风险交付",
+          "title": "本卷增强补全（2026）— 选型方法论：从参数表到“成本/风险/交付”",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-选型四问任何-GPU集群采购都先回答",
+              "title": "1) 选型四问（任何 GPU/集群采购都先回答）",
+              "level": 3
+            },
+            {
+              "id": "2-成本模型最小可用",
+              "title": "2) 成本模型（最小可用）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 14
     },
     {
       "id": "debug",
@@ -299,7 +4880,231 @@ window.__SITE_DATA__ = {
       "description": "炼丹失败案例集：Loss 震荡、模型坍塌、OOM 复盘",
       "isAppendix": true,
       "icon": "⚡",
-      "lines": 1198
+      "lines": 1218,
+      "sections": [
+        {
+          "id": "写在最前",
+          "title": "写在最前",
+          "level": 2,
+          "children": [
+            {
+              "id": "术语对照",
+              "title": "术语对照",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "目录",
+          "title": "目录",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章异火之噬---CUDA-错误",
+          "title": "第一章：异火之噬 — CUDA 错误",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-CUDA-Out-of-Memory显存溢出--最常见的反噬",
+              "title": "1.1 CUDA Out of Memory（显存溢出）— 最常见的反噬",
+              "level": 3
+            },
+            {
+              "id": "1.2-CUDA-版本不匹配---异火与丹炉不兼容",
+              "title": "1.2 CUDA 版本不匹配 — 异火与丹炉不兼容",
+              "level": 3
+            },
+            {
+              "id": "1.3-NCCL-错误---多火通信故障",
+              "title": "1.3 NCCL 错误 — 多火通信故障",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章走火入魔---训练过程问题",
+          "title": "第二章：走火入魔 — 训练过程问题",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-Loss-NaN---炼丹炉爆炸",
+              "title": "2.1 Loss NaN — 炼丹炉爆炸",
+              "level": 3
+            },
+            {
+              "id": "2.2-Loss-爆炸---炼丹失控",
+              "title": "2.2 Loss 爆炸 — 炼丹失控",
+              "level": 3
+            },
+            {
+              "id": "2.3-Loss-停滞---炼丹无进展",
+              "title": "2.3 Loss 停滞 — 炼丹无进展",
+              "level": 3
+            },
+            {
+              "id": "2.4-梯度消失与梯度爆炸---斗气逆流",
+              "title": "2.4 梯度消失与梯度爆炸 — 斗气逆流",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章丹毒之患---模型质量问题",
+          "title": "第三章：丹毒之患 — 模型质量问题",
+          "level": 2,
+          "children": [
+            {
+              "id": "3.1-Mode-Collapse---丹药同质化",
+              "title": "3.1 Mode Collapse — 丹药同质化",
+              "level": 3
+            },
+            {
+              "id": "3.2-Catastrophic-Forgetting---丹道走偏",
+              "title": "3.2 Catastrophic Forgetting — 丹道走偏",
+              "level": 3
+            },
+            {
+              "id": "3.3-Reward-Hacking---钻奖励漏洞",
+              "title": "3.3 Reward Hacking — 钻奖励漏洞",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第四章丹炉不稳---环境配置问题",
+          "title": "第四章：丹炉不稳 — 环境配置问题",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-包版本冲突---丹材不兼容",
+              "title": "4.1 包版本冲突 — 丹材不兼容",
+              "level": 3
+            },
+            {
+              "id": "4.2-CUDA-Toolkit-与驱动不匹配",
+              "title": "4.2 CUDA Toolkit 与驱动不匹配",
+              "level": 3
+            },
+            {
+              "id": "4.3-Python-版本问题",
+              "title": "4.3 Python 版本问题",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章万火同炼---分布式训练问题",
+          "title": "第五章：万火同炼 — 分布式训练问题",
+          "level": 2,
+          "children": [
+            {
+              "id": "5.1-进程挂起Hanging",
+              "title": "5.1 进程挂起（Hanging）",
+              "level": 3
+            },
+            {
+              "id": "5.2-各-GPU-不同步Desync",
+              "title": "5.2 各 GPU 不同步（Desync）",
+              "level": 3
+            },
+            {
+              "id": "5.3-NCCL-超时",
+              "title": "5.3 NCCL 超时",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第六章推理之噬---推理部署问题",
+          "title": "第六章：推理之噬 — 推理部署问题",
+          "level": 2,
+          "children": [
+            {
+              "id": "6.1-推理-OOM",
+              "title": "6.1 推理 OOM",
+              "level": 3
+            },
+            {
+              "id": "6.2-推理速度慢",
+              "title": "6.2 推理速度慢",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录急救丹方速查表",
+          "title": "附录：急救丹方速查表",
+          "level": 2,
+          "children": [
+            {
+              "id": "快速诊断流程",
+              "title": "快速诊断流程",
+              "level": 3
+            },
+            {
+              "id": "常用调试命令速查",
+              "title": "常用调试命令速查",
+              "level": 3
+            },
+            {
+              "id": "常见错误信息与对策快查",
+              "title": "常见错误信息与对策快查",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B2025-新型反噬与对策",
+          "title": "附录 B：2025 新型反噬与对策",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-LoRAQLoRA-常见反噬",
+              "title": "B.1 LoRA/QLoRA 常见反噬",
+              "level": 3
+            },
+            {
+              "id": "B.2-分布式训练反噬",
+              "title": "B.2 分布式训练反噬",
+              "level": 3
+            },
+            {
+              "id": "B.3-长文本训练反噬",
+              "title": "B.3 长文本训练反噬",
+              "level": 3
+            },
+            {
+              "id": "B.4-推理服务反噬vLLM--TGI-部署",
+              "title": "B.4 推理服务反噬（vLLM / TGI 部署）",
+              "level": 3
+            },
+            {
+              "id": "B.5-模型安全反噬",
+              "title": "B.5 模型安全反噬",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--反噬定位-SOP从现象到根因建议做成团队-Runbook",
+          "title": "本卷增强补全（2026）— 反噬定位 SOP：从现象到根因（建议做成团队 Runbook）",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-通用排查顺序强烈推荐固定成习惯",
+              "title": "1) 通用排查顺序（强烈推荐固定成习惯）",
+              "level": 3
+            },
+            {
+              "id": "2-三类高频反噬的最小排查表",
+              "title": "2) 三类高频反噬的“最小排查表”",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 11
     },
     {
       "id": "dataset",
@@ -311,7 +5116,199 @@ window.__SITE_DATA__ = {
       "description": "开源数据集收录与洗炼工具",
       "isAppendix": true,
       "icon": "🌿",
-      "lines": 1206
+      "lines": 1225,
+      "sections": [
+        {
+          "id": "写在最前",
+          "title": "写在最前",
+          "level": 2,
+          "children": [
+            {
+              "id": "术语对照",
+              "title": "术语对照",
+              "level": 3
+            },
+            {
+              "id": "药材品质评级体系",
+              "title": "药材品质评级体系",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "目录",
+          "title": "目录",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第一章筑基药材---预训练数据集",
+          "title": "第一章：筑基药材 — 预训练数据集",
+          "level": 2,
+          "children": [
+            {
+              "id": "1.1-英文通用语料",
+              "title": "1.1 英文通用语料",
+              "level": 3
+            },
+            {
+              "id": "1.2-中文语料",
+              "title": "1.2 中文语料",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第二章炼心药材---SFT-微调数据集",
+          "title": "第二章：炼心药材 — SFT 微调数据集",
+          "level": 2,
+          "children": [
+            {
+              "id": "2.1-英文-SFT-数据集",
+              "title": "2.1 英文 SFT 数据集",
+              "level": 3
+            },
+            {
+              "id": "2.2-中文-SFT-数据集",
+              "title": "2.2 中文 SFT 数据集",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第三章淬体药材---偏好对齐数据集",
+          "title": "第三章：淬体药材 — 偏好对齐数据集",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第四章试丹之石---评估基准数据集",
+          "title": "第四章：试丹之石 — 评估基准数据集",
+          "level": 2,
+          "children": [
+            {
+              "id": "4.1-综合能力评估",
+              "title": "4.1 综合能力评估",
+              "level": 3
+            },
+            {
+              "id": "4.2-推理能力评估",
+              "title": "4.2 推理能力评估",
+              "level": 3
+            },
+            {
+              "id": "4.3-中文评估基准",
+              "title": "4.3 中文评估基准",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "第五章万象药材---多模态数据集",
+          "title": "第五章：万象药材 — 多模态数据集",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "第六章炼化之术---数据清洗工具",
+          "title": "第六章：炼化之术 — 数据清洗工具",
+          "level": 2,
+          "children": [
+            {
+              "id": "6.1-数据清洗工具总览",
+              "title": "6.1 数据清洗工具总览",
+              "level": 3
+            },
+            {
+              "id": "6.2-data-juicer",
+              "title": "6.2 data-juicer",
+              "level": 3
+            },
+            {
+              "id": "6.3-datatrove",
+              "title": "6.3 datatrove",
+              "level": 3
+            },
+            {
+              "id": "6.4-数据清洗最佳实践",
+              "title": "6.4 数据清洗最佳实践",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录药材选用指南",
+          "title": "附录：药材选用指南",
+          "level": 2,
+          "children": [
+            {
+              "id": "按修炼阶段推荐",
+              "title": "按修炼阶段推荐",
+              "level": 3
+            },
+            {
+              "id": "数据配比经验法则",
+              "title": "数据配比经验法则",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录-B2024-2025-新型药材",
+          "title": "附录 B：2024-2025 新型药材",
+          "level": 2,
+          "children": [
+            {
+              "id": "B.1-指令微调数据集SFT",
+              "title": "B.1 指令微调数据集（SFT）",
+              "level": 3
+            },
+            {
+              "id": "B.2-对齐数据集RLHFDPO",
+              "title": "B.2 对齐数据集（RLHF/DPO）",
+              "level": 3
+            },
+            {
+              "id": "B.3-合成数据Synthetic-Data",
+              "title": "B.3 合成数据（Synthetic Data）",
+              "level": 3
+            },
+            {
+              "id": "B.4-DeepSeek-R1-蒸馏数据",
+              "title": "B.4 DeepSeek-R1 蒸馏数据",
+              "level": 3
+            },
+            {
+              "id": "B.5-多模态数据集补充",
+              "title": "B.5 多模态数据集补充",
+              "level": 3
+            },
+            {
+              "id": "B.6-评估基准更新2025-2026",
+              "title": "B.6 评估基准更新（2025-2026）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "本卷增强补全2026--数据治理许可脱敏版本化让药材可长期使用",
+          "title": "本卷增强补全（2026）— 数据治理：许可/脱敏/版本化（让“药材”可长期使用）",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-数据治理三件套强烈建议作为团队默认规范",
+              "title": "1) 数据治理三件套（强烈建议作为团队默认规范）",
+              "level": 3
+            },
+            {
+              "id": "2-数据质量的高收益过滤建议先做这几项往往立竿见影",
+              "title": "2) 数据质量的“高收益过滤”建议（先做这几项往往立竿见影）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 11
     },
     {
       "id": "interview",
@@ -323,12 +5320,984 @@ window.__SITE_DATA__ = {
       "description": "算法面经与面试通关指南：Python/ML/DL/Transformer/NLP/LLM/RAG/系统设计九重天劫",
       "isAppendix": true,
       "icon": "⚔️",
-      "lines": 3522
+      "lines": 3545,
+      "sections": [
+        {
+          "id": "卷首语",
+          "title": "卷首语",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "1.1-核心语法",
+          "title": "1.1 核心语法",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q1-Python中args和kwargs的作用",
+              "title": "Q1: Python中`*args`和`**kwargs`的作用",
+              "level": 3
+            },
+            {
+              "id": "Q2-装饰器Decorator的原理与实现",
+              "title": "Q2: 装饰器（Decorator）的原理与实现",
+              "level": 3
+            },
+            {
+              "id": "Q3-GIL全局解释器锁及其影响",
+              "title": "Q3: GIL（全局解释器锁）及其影响",
+              "level": 3
+            },
+            {
+              "id": "Q4-生成器Generator与迭代器",
+              "title": "Q4: 生成器（Generator）与迭代器",
+              "level": 3
+            },
+            {
+              "id": "Q5-深拷贝-vs-浅拷贝",
+              "title": "Q5: 深拷贝 vs 浅拷贝",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "1.2-数据结构",
+          "title": "1.2 数据结构",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q6-dict的底层实现与时间复杂度",
+              "title": "Q6: dict的底层实现与时间复杂度",
+              "level": 3
+            },
+            {
+              "id": "Q7-list-vs-tuple-的选择",
+              "title": "Q7: list vs tuple 的选择",
+              "level": 3
+            },
+            {
+              "id": "Q8-heapq---堆的应用",
+              "title": "Q8: heapq - 堆的应用",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "1.3-编程真题",
+          "title": "1.3 编程真题",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q9-LRU缓存实现",
+              "title": "Q9: LRU缓存实现",
+              "level": 3
+            },
+            {
+              "id": "Q10-单例模式面试常考",
+              "title": "Q10: 单例模式（面试常考）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "1.4-Python高级特性补充扩展",
+          "title": "1.4 Python高级特性（补充扩展）",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q10a-闭包Closure原理与陷阱",
+              "title": "Q10a: 闭包（Closure）原理与陷阱",
+              "level": 3
+            },
+            {
+              "id": "Q10b-Python内存管理机制",
+              "title": "Q10b: Python内存管理机制",
+              "level": 3
+            },
+            {
+              "id": "Q10c-MRO方法解析顺序与多继承",
+              "title": "Q10c: MRO（方法解析顺序）与多继承",
+              "level": 3
+            },
+            {
+              "id": "Q10d-协程asyncio深入理解",
+              "title": "Q10d: 协程（asyncio）深入理解",
+              "level": 3
+            },
+            {
+              "id": "Q10e-描述符Descriptor协议",
+              "title": "Q10e: 描述符（Descriptor）协议",
+              "level": 3
+            },
+            {
+              "id": "Q10f-元类Metaclass精要",
+              "title": "Q10f: 元类（Metaclass）精要",
+              "level": 3
+            },
+            {
+              "id": "Q10g-Python数据模型魔法方法速查",
+              "title": "Q10g: Python数据模型（魔法方法）速查",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "2.1-经典算法",
+          "title": "2.1 经典算法",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q11-逻辑回归详解",
+              "title": "Q11: 逻辑回归详解",
+              "level": 3
+            },
+            {
+              "id": "Q12-决策树与随机森林",
+              "title": "Q12: 决策树与随机森林",
+              "level": 3
+            },
+            {
+              "id": "Q13-SVM支持向量机",
+              "title": "Q13: SVM支持向量机",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "2.3-集成学习与树模型补充扩展面试高频",
+          "title": "2.3 集成学习与树模型（补充扩展）★面试高频★",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q14a-XGBoost核心原理详解",
+              "title": "Q14a: XGBoost核心原理详解",
+              "level": 3
+            },
+            {
+              "id": "Q14b-LightGBM-vs-XGBoost-vs-GBDT对比",
+              "title": "Q14b: LightGBM vs XGBoost vs GBDT对比",
+              "level": 3
+            },
+            {
+              "id": "Q14c-特征工程核心方法",
+              "title": "Q14c: 特征工程核心方法",
+              "level": 3
+            },
+            {
+              "id": "Q14d-数据不平衡问题解决方案",
+              "title": "Q14d: 数据不平衡问题解决方案",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "2.4-经典算法补充",
+          "title": "2.4 经典算法补充",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q15a-K-Means聚类深入解析",
+              "title": "Q15a: K-Means聚类深入解析",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "2.2-评估指标",
+          "title": "2.2 评估指标",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q16-PrecisionRecallF1AUC全面解析",
+              "title": "Q16: Precision/Recall/F1/AUC全面解析",
+              "level": 3
+            },
+            {
+              "id": "Q15-偏差-方差权衡",
+              "title": "Q15: 偏差-方差权衡",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "3.1-基础理论",
+          "title": "3.1 基础理论",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q16-反向传播算法推导",
+              "title": "Q16: 反向传播算法推导",
+              "level": 3
+            },
+            {
+              "id": "Q17-梯度消失爆炸问题",
+              "title": "Q17: 梯度消失/爆炸问题",
+              "level": 3
+            },
+            {
+              "id": "Q18-归一化方法对比",
+              "title": "Q18: 归一化方法对比",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "3.3-CNN与卷积神经网络补充扩展",
+          "title": "3.3 CNN与卷积神经网络（补充扩展）",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q19a-CNN核心概念深度解析",
+              "title": "Q19a: CNN核心概念深度解析",
+              "level": 3
+            },
+            {
+              "id": "Q19b-RNNLSTMGRU序列模型详解",
+              "title": "Q19b: RNN/LSTM/GRU序列模型详解",
+              "level": 3
+            },
+            {
+              "id": "Q19c-正则化技术全景图",
+              "title": "Q19c: 正则化技术全景图",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "3.2-优化算法",
+          "title": "3.2 优化算法",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q19-优化器演进",
+              "title": "Q19: 优化器演进",
+              "level": 3
+            },
+            {
+              "id": "Q20-学习率调度策略",
+              "title": "Q20: 学习率调度策略",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "4.1-核心组件",
+          "title": "4.1 核心组件",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q21-Self-Attention完整推导",
+              "title": "Q21: Self-Attention完整推导",
+              "level": 3
+            },
+            {
+              "id": "Q22-Multi-Head-Attention",
+              "title": "Q22: Multi-Head Attention",
+              "level": 3
+            },
+            {
+              "id": "Q23-Positional-Encoding-位置编码",
+              "title": "Q23: Positional Encoding (位置编码)",
+              "level": 3
+            },
+            {
+              "id": "Q24-Encoder-vs-Decoder-vs-Enc-Dec",
+              "title": "Q24: Encoder vs Decoder vs Enc-Dec",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "4.2-FFN",
+          "title": "4.2 FFN",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q25-Feed-Forward-Network的作用",
+              "title": "Q25: Feed-Forward Network的作用",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "4.3-Transformer深度扩展补充面试核心",
+          "title": "4.3 Transformer深度扩展（补充）★面试核心★",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q26a-GQAMQA---多查询注意力变体",
+              "title": "Q26a: GQA/MQA — 多查询注意力变体",
+              "level": 3
+            },
+            {
+              "id": "Q27a-线性Attention与长序列优化",
+              "title": "Q27a: 线性Attention与长序列优化",
+              "level": 3
+            },
+            {
+              "id": "Q28a-LayerNorm深入原理与RMSNorm",
+              "title": "Q28a: LayerNorm深入原理与RMSNorm",
+              "level": 3
+            },
+            {
+              "id": "Q29a-Transformer训练技巧汇总",
+              "title": "Q29a: Transformer训练技巧汇总",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "5.1-预训练基础",
+          "title": "5.1 预训练基础",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q26-Tokenization详解",
+              "title": "Q26: Tokenization详解",
+              "level": 3
+            },
+            {
+              "id": "Q27-Embedding演进",
+              "title": "Q27: Embedding演进",
+              "level": 3
+            },
+            {
+              "id": "Q28-预训练任务",
+              "title": "Q28: 预训练任务",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "5.2-大模型核心技术",
+          "title": "5.2 大模型核心技术",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q29-Scaling-Laws-缩放定律-必考",
+              "title": "Q29: Scaling Laws (缩放定律) ★必考★",
+              "level": 3
+            },
+            {
+              "id": "Q30-RLHF详解",
+              "title": "Q30: RLHF详解",
+              "level": 3
+            },
+            {
+              "id": "Q31-MoE混合专家模型",
+              "title": "Q31: MoE混合专家模型",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "5.3-LLM核心技术深度扩展",
+          "title": "5.3 LLM核心技术深度扩展",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q31a-MoE混合专家模型深度解析",
+              "title": "Q31a: MoE混合专家模型深度解析",
+              "level": 3
+            },
+            {
+              "id": "Q32a-长上下文技术扩展",
+              "title": "Q32a: 长上下文技术扩展",
+              "level": 3
+            },
+            {
+              "id": "Q33a-推理能力增强---o1CoTSTR",
+              "title": "Q33a: 推理能力增强 — o1/CoT/STR",
+              "level": 3
+            },
+            {
+              "id": "Q34a-合成数据Synthetic-Data与模型坍塌",
+              "title": "Q34a: 合成数据(Synthetic Data)与模型坍塌",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "6.1-高效微调-PEFT",
+          "title": "6.1 高效微调 (PEFT)",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q32-LoRAQLoRA完整解析-面试必考",
+              "title": "Q32: LoRA/QLoRA完整解析 ★面试必考★",
+              "level": 3
+            },
+            {
+              "id": "Q33-PEFT方法全景",
+              "title": "Q33: PEFT方法全景",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "6.2-量化",
+          "title": "6.2 量化",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q34-量化技术全面解析",
+              "title": "Q34: 量化技术全面解析",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "6.3-推理优化",
+          "title": "6.3 推理优化",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q35-推理加速全景图",
+              "title": "Q35: 推理加速全景图",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "6.4-微调部署深度扩展",
+          "title": "6.4 微调部署深度扩展",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q36a-LoRA数学推导与深入理解",
+              "title": "Q36a: LoRA数学推导与深入理解",
+              "level": 3
+            },
+            {
+              "id": "Q37a-QLoRA量化微调详解",
+              "title": "Q37a: QLoRA量化微调详解",
+              "level": 3
+            },
+            {
+              "id": "Q38a-SFT数据构建与训练技巧",
+              "title": "Q38a: SFT数据构建与训练技巧",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "7.1-RAG核心",
+          "title": "7.1 RAG核心",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q36-RAG架构与流程",
+              "title": "Q36: RAG架构与流程",
+              "level": 3
+            },
+            {
+              "id": "Q37-向量数据库与Embedding",
+              "title": "Q37: 向量数据库与Embedding",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "7.2-Advanced-RAG",
+          "title": "7.2 Advanced RAG",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q38-Agentic-RAG与高级技术",
+              "title": "Q38: Agentic RAG与高级技术",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "7.3-RAG深度扩展补充2025-2026面试核心",
+          "title": "7.3 RAG深度扩展（补充）★2025-2026面试核心★",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q39a-Chunking切分策略深度解析",
+              "title": "Q39a: Chunking切分策略深度解析",
+              "level": 3
+            },
+            {
+              "id": "Q40a-Embedding选型与微调",
+              "title": "Q40a: Embedding选型与微调",
+              "level": 3
+            },
+            {
+              "id": "Q41a-GraphRAG与结构化检索",
+              "title": "Q41a: GraphRAG与结构化检索",
+              "level": 3
+            },
+            {
+              "id": "Q42a-RAG评测体系实操指南",
+              "title": "Q42a: RAG评测体系实操指南",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "8.1-LLM架构设计",
+          "title": "8.1 LLM架构设计",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q39-LLM应用系统设计",
+              "title": "Q39: LLM应用系统设计",
+              "level": 3
+            },
+            {
+              "id": "Q40-Prompt-Engineering",
+              "title": "Q40: Prompt Engineering",
+              "level": 3
+            },
+            {
+              "id": "Q41-AI工程核心教训-来自AI算法研究手册",
+              "title": "Q41: AI工程核心教训 (来自AI算法研究手册)",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "8.2-系统设计深度扩展补充",
+          "title": "8.2 系统设计深度扩展（补充）",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q42a-LLM应用架构设计模式",
+              "title": "Q42a: LLM应用架构设计模式",
+              "level": 3
+            },
+            {
+              "id": "Q43a-向量数据库选型与实战",
+              "title": "Q43a: 向量数据库选型与实战",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "9.1-STAR法则",
+          "title": "9.1 STAR法则",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q42-用STAR法则讲述项目",
+              "title": "Q42: 用STAR法则讲述项目",
+              "level": 3
+            },
+            {
+              "id": "Q43-行为面试高频题",
+              "title": "Q43: 行为面试高频题",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "9.2-面试准备Checklist",
+          "title": "9.2 面试准备Checklist",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q44-完整面试准备清单",
+              "title": "Q44: 完整面试准备清单",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "9.3-行为面试深度扩展补充",
+          "title": "9.3 行为面试深度扩展（补充）",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q45a-高质量回答模板与避坑指南",
+              "title": "Q45a: 高质量回答模板与避坑指南",
+              "level": 3
+            },
+            {
+              "id": "Q46a-AI岗位面试趋势与薪资参考",
+              "title": "Q46a: AI岗位面试趋势与薪资参考",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "附录快速参考表",
+          "title": "附录：快速参考表",
+          "level": 2,
+          "children": [
+            {
+              "id": "A.-常用超参数速查表",
+              "title": "A. 常用超参数速查表",
+              "level": 3
+            },
+            {
+              "id": "B.-主流模型架构参数速查",
+              "title": "B. 主流模型架构参数速查",
+              "level": 3
+            },
+            {
+              "id": "C.-面试资源推荐",
+              "title": "C. 面试资源推荐",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "10.1-推理加速深度解析-2025-2026面试热点",
+          "title": "10.1 推理加速深度解析 ★2025-2026面试热点★",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q45-KV-Cache-原理与优化",
+              "title": "Q45: KV Cache 原理与优化",
+              "level": 3
+            },
+            {
+              "id": "Q46-FlashAttention-全解析",
+              "title": "Q46: FlashAttention 全解析",
+              "level": 3
+            },
+            {
+              "id": "Q47-vLLM架构与PagedAttention",
+              "title": "Q47: vLLM架构与PagedAttention",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "10.2-RAG进阶与Agentic-RAG",
+          "title": "10.2 RAG进阶与Agentic RAG",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q48-RAG系统设计全解28个高频问题精要",
+              "title": "Q48: RAG系统设计全解（28个高频问题精要）",
+              "level": 3
+            },
+            {
+              "id": "Q49-RAG效果评估体系",
+              "title": "Q49: RAG效果评估体系",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "10.3-微调技术全景深化",
+          "title": "10.3 微调技术全景深化",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q50-五大微调技术终极对比",
+              "title": "Q50: 五大微调技术终极对比",
+              "level": 3
+            },
+            {
+              "id": "Q51-LoRA深入原理与变体",
+              "title": "Q51: LoRA深入原理与变体",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "10.4-AI-Agent与工具调用",
+          "title": "10.4 AI Agent与工具调用",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q52-AI-Agent核心架构",
+              "title": "Q52: AI Agent核心架构",
+              "level": 3
+            },
+            {
+              "id": "Q53a-ReAct模式与推理框架详解",
+              "title": "Q53a: ReAct模式与推理框架详解",
+              "level": 3
+            },
+            {
+              "id": "Q54a-MCP协议与Function-Calling详解",
+              "title": "Q54a: MCP协议与Function Calling详解",
+              "level": 3
+            },
+            {
+              "id": "Q55a-多Agent系统设计",
+              "title": "Q55a: 多Agent系统设计",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "10.5-Prompt-Engineering高级技巧",
+          "title": "10.5 Prompt Engineering高级技巧",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q53-Prompt工程方法论",
+              "title": "Q53: Prompt工程方法论",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "10.6-多模态与大模型前沿",
+          "title": "10.6 多模态与大模型前沿",
+          "level": 2,
+          "children": [
+            {
+              "id": "Q54-视觉语言模型VLM基础--Q55-2025-2026技术趋势",
+              "title": "Q54: 视觉语言模型(VLM)基础 & Q55: 2025-2026技术趋势",
+              "level": 3
+            },
+            {
+              "id": "Q56-Q59-手写核心算法",
+              "title": "Q56-Q59: 手写核心算法",
+              "level": 3
+            },
+            {
+              "id": "Q60-Softmax与交叉熵含数值稳定性",
+              "title": "Q60: Softmax与交叉熵（含数值稳定性）",
+              "level": 3
+            },
+            {
+              "id": "Q61-Dropout训练推理两种模式",
+              "title": "Q61: Dropout（训练/推理两种模式）",
+              "level": 3
+            },
+            {
+              "id": "Q62-Transformer-Encoder层完整实现Numpy",
+              "title": "Q62: Transformer Encoder层完整实现（Numpy）",
+              "level": 3
+            },
+            {
+              "id": "Q63-Beam-Search解码算法",
+              "title": "Q63: Beam Search解码算法",
+              "level": 3
+            },
+            {
+              "id": "Q64-RMSNormLLaMA使用的简化LayerNorm",
+              "title": "Q64: RMSNorm（LLaMA使用的简化LayerNorm）",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "D.1-主要参考资料来源",
+          "title": "D.1 主要参考资料来源",
+          "level": 2,
+          "children": [
+            {
+              "id": "面试题库总汇",
+              "title": "面试题库总汇",
+              "level": 3
+            },
+            {
+              "id": "Transformer--Attention",
+              "title": "Transformer & Attention",
+              "level": 3
+            },
+            {
+              "id": "RAG专题",
+              "title": "RAG专题",
+              "level": 3
+            },
+            {
+              "id": "微调与对齐技术",
+              "title": "微调与对齐技术",
+              "level": 3
+            },
+            {
+              "id": "量化与推理优化",
+              "title": "量化与推理优化",
+              "level": 3
+            },
+            {
+              "id": "AI-Agent--LangChain",
+              "title": "AI Agent & LangChain",
+              "level": 3
+            },
+            {
+              "id": "手撕代码",
+              "title": "手撕代码",
+              "level": 3
+            },
+            {
+              "id": "多模态",
+              "title": "多模态",
+              "level": 3
+            },
+            {
+              "id": "本地参考材料",
+              "title": "本地参考材料",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "id": "D.2-Python--基础知识",
+          "title": "D.2 Python & 基础知识",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "D.3-机器学习--深度学习",
+          "title": "D.3 机器学习 & 深度学习",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "D.4-Transformer--大模型",
+          "title": "D.4 Transformer & 大模型",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "D.5-RAG--Agent-进阶",
+          "title": "D.5 RAG & Agent 进阶",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "D.6-手撕代码--实战",
+          "title": "D.6 手撕代码 & 实战",
+          "level": 2,
+          "children": []
+        },
+        {
+          "id": "本卷增强补全2026--体系化索引按定位与生命周期查题",
+          "title": "本卷增强补全（2026）— 体系化索引：按“定位”与“生命周期”查题",
+          "level": 2,
+          "children": [
+            {
+              "id": "1-按问题定位的索引推荐你后续逐步完善为目录锚点",
+              "title": "1) 按问题定位的索引（推荐你后续逐步完善为目录/锚点）",
+              "level": 3
+            },
+            {
+              "id": "2-按生命周期的索引从做题到做系统",
+              "title": "2) 按生命周期的索引（从“做题”到“做系统”）",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "sectionCount": 44
     }
   ],
   "home": {
     "title": "焚诀",
     "subtitle": "A Cultivation Guide for Foundation Models: From Dust to Deity"
+  },
+  "knowledgeGraph": {
+    "links": [
+      {
+        "source": "vol01",
+        "target": "vol02",
+        "label": "PyTorch基础 → 架构入门",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol02",
+        "target": "vol03",
+        "label": "Transformer架构 → 预训练",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol03",
+        "target": "vol04",
+        "label": "预训练模型 → 高效微调",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol04",
+        "target": "vol05",
+        "label": "LoRA微调 → 分布式扩展",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol05",
+        "target": "vol06",
+        "label": "分布式训练 → 工业级流水线",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol06",
+        "target": "vol07",
+        "label": "SFT/RAG → 多模态融合",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol07",
+        "target": "vol08",
+        "label": "VLM多模态 → 对齐训练",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol08",
+        "target": "vol09",
+        "label": "RLHF对齐 → 大规模预训练",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol09",
+        "target": "vol10",
+        "label": "基础架构 → AGI前沿",
+        "type": "prerequisite"
+      },
+      {
+        "source": "vol01",
+        "target": "vol05",
+        "label": "Python基础 → 混合精度",
+        "type": "concept"
+      },
+      {
+        "source": "vol02",
+        "target": "vol07",
+        "label": "CNN → 视觉编码器",
+        "type": "concept"
+      },
+      {
+        "source": "vol02",
+        "target": "vol08",
+        "label": "Transformer → PPO对齐",
+        "type": "concept"
+      },
+      {
+        "source": "vol03",
+        "target": "vol06",
+        "label": "Tokenizer → 数据清洗",
+        "type": "concept"
+      },
+      {
+        "source": "vol04",
+        "target": "vol08",
+        "label": "PEFT微调 → DPO优化",
+        "type": "concept"
+      },
+      {
+        "source": "vol05",
+        "target": "vol09",
+        "label": "DeepSpeed → Megatron-LM",
+        "type": "concept"
+      },
+      {
+        "source": "vol06",
+        "target": "vol11",
+        "label": "SFT工程 → 面经实战",
+        "type": "application"
+      },
+      {
+        "source": "vol07",
+        "target": "vol10",
+        "label": "多模态 → 原生统一",
+        "type": "concept"
+      },
+      {
+        "source": "vol09",
+        "target": "vol10",
+        "label": "MoE → 自进化Agent",
+        "type": "concept"
+      }
+    ]
   }
 };
 </script>
