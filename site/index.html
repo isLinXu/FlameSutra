@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net;">
+  <title>焚诀 FlameSutra — 大模型修炼指南</title>
+  <meta name="description" content="以玄幻修仙之喻，讲解 Foundation Model 全栈技术。从 Python 基础到 AGI 探索，十卷完整修炼体系。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&family=Noto+Serif+SC:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+  <!-- Load marked.js and DOMPurify before the module -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar"></div>
+
+<!-- Header -->
+<header class="site-header">
+  <a class="header-logo" href="#home">
+    <span class="logo-icon">🔥</span>
+    <span>焚诀</span>
+  </a>
+  
+  <nav class="header-nav" id="header-nav">
+    <a data-page="vol01" href="#vol01">第一卷</a>
+    <a data-page="vol02" href="#vol02">第二卷</a>
+    <a data-page="vol03" href="#vol03">第三卷</a>
+    <a data-page="vol04" href="#vol04">第四卷</a>
+    <a data-page="vol05" href="#vol05">第五卷</a>
+    <a data-page="vol06" href="#vol06">第六卷</a>
+    <a data-page="vol07" href="#vol07">第七卷</a>
+    <a data-page="vol08" href="#vol08">第八卷</a>
+    <a data-page="vol09" href="#vol09">第九卷</a>
+    <a data-page="vol10" href="#vol10">第十卷</a>
+    
+  </nav>
+  
+  <div class="header-search">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" type="text" placeholder="搜索修炼内容... (⌘K)" aria-label="搜索">
+  </div>
+  
+  <button class="mobile-menu-btn" aria-label="菜单">☰</button>
+</header>
+
+<!-- Search Results -->
+<div class="search-results" id="search-results"></div>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay"></div>
+
+<!-- Main Layout -->
+<div class="site-container">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <a class="sidebar-item" data-page="home" href="#home">
+      <span class="item-icon">🏠</span>
+      <span class="item-label">功法总览</span>
+    </a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">正篇十卷</div>
+    <a class="sidebar-item" data-page="vol01" href="#vol01">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第一卷 筑基篇</span>
+      <span class="realm-badge realm-dou-zhi-qi">斗之气</span>
+    </a>
+    <a class="sidebar-item" data-page="vol02" href="#vol02">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第二卷 纳灵篇</span>
+      <span class="realm-badge realm-dou-zhe">斗者→斗师</span>
+    </a>
+    <a class="sidebar-item" data-page="vol03" href="#vol03">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第三卷 凝晶篇</span>
+      <span class="realm-badge realm-da-dou-shi">大斗师</span>
+    </a>
+    <a class="sidebar-item" data-page="vol04" href="#vol04">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第四卷 化形篇</span>
+      <span class="realm-badge realm-dou-ling">斗灵</span>
+    </a>
+    <a class="sidebar-item" data-page="vol05" href="#vol05">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第五卷 化翼篇</span>
+      <span class="realm-badge realm-dou-wang">斗王</span>
+    </a>
+    <a class="sidebar-item" data-page="vol06" href="#vol06">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第六卷 凌空篇</span>
+      <span class="realm-badge realm-dou-huang">斗皇</span>
+    </a>
+    <a class="sidebar-item" data-page="vol07" href="#vol07">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第七卷 空间篇</span>
+      <span class="realm-badge realm-dou-zong">斗宗</span>
+    </a>
+    <a class="sidebar-item" data-page="vol08" href="#vol08">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第八卷 九转篇</span>
+      <span class="realm-badge realm-dou-zun">斗尊</span>
+    </a>
+    <a class="sidebar-item" data-page="vol09" href="#vol09">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第九卷 成圣篇</span>
+      <span class="realm-badge realm-dou-sheng">斗圣</span>
+    </a>
+    <a class="sidebar-item" data-page="vol10" href="#vol10">
+      <span class="item-icon">📖</span>
+      <span class="item-label">第十卷 帝境篇</span>
+      <span class="realm-badge realm-dou-di">斗帝</span>
+    </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">辅助典籍</div>
+    <a class="sidebar-item" data-page="huofire" href="#huofire">
+      <span class="item-icon">🔥</span>
+      <span class="item-label">万火录</span>
+    </a>
+    <a class="sidebar-item" data-page="debug" href="#debug">
+      <span class="item-icon">⚡</span>
+      <span class="item-label">反噬录</span>
+    </a>
+    <a class="sidebar-item" data-page="dataset" href="#dataset">
+      <span class="item-icon">🌿</span>
+      <span class="item-label">药材库</span>
+    </a>
+    </div>
+
+  </aside>
+  
+  <!-- Content -->
+  <main class="content-area" id="content">
+    <div class="loading-spinner">加载中</div>
+  </main>
+  
+</div>
+
+<!-- TOC Panel -->
+<div class="toc-panel" id="toc-panel"></div>
+
+<!-- Scroll to Top -->
+<button class="scroll-top" aria-label="回到顶部">↑</button>
+
+<!-- App Script -->
+<script>
+// Site data injected by build.py
+window.__SITE_DATA__ = {
+  "pages": [
+    {
+      "id": "vol01",
+      "title": "筑基篇",
+      "subtitle": "凝聚气旋",
+      "realm": "斗之气",
+      "realmClass": "dou-zhi-qi",
+      "num": "一",
+      "description": "Python、线性代数、微积分、概率论、PyTorch 基础",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 3499
+    },
+    {
+      "id": "vol02",
+      "title": "纳灵篇",
+      "subtitle": "炼气入体",
+      "realm": "斗者→斗师",
+      "realmClass": "dou-zhe",
+      "num": "二",
+      "description": "CNN、RNN/LSTM、Transformer 架构深度拆解",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 11444
+    },
+    {
+      "id": "vol03",
+      "title": "凝晶篇",
+      "subtitle": "斗气固化",
+      "realm": "大斗师",
+      "realmClass": "da-dou-shi",
+      "num": "三",
+      "description": "BERT、GPT-2 预训练、Tokenizer、Embedding",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 4091
+    },
+    {
+      "id": "vol04",
+      "title": "化形篇",
+      "subtitle": "丹药化形",
+      "realm": "斗灵",
+      "realmClass": "dou-ling",
+      "num": "四",
+      "description": "PEFT（LoRA/DoRA/AdaLoRA）、量化、Prompt Engineering",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 2702
+    },
+    {
+      "id": "vol05",
+      "title": "化翼篇",
+      "subtitle": "斗气化翼",
+      "realm": "斗王",
+      "realmClass": "dou-wang",
+      "num": "五",
+      "description": "DDP、DeepSpeed、混合精度、梯度累加",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 3073
+    },
+    {
+      "id": "vol06",
+      "title": "凌空篇",
+      "subtitle": "凌空而行",
+      "realm": "斗皇",
+      "realmClass": "dou-huang",
+      "num": "六",
+      "description": "SFT 体系、数据清洗、RAG 与向量数据库",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 4620
+    },
+    {
+      "id": "vol07",
+      "title": "空间篇",
+      "subtitle": "空间之力",
+      "realm": "斗宗",
+      "realmClass": "dou-zong",
+      "num": "七",
+      "description": "VLM 多模态、CLIP、Vision Encoder + LLM 融合",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 2619
+    },
+    {
+      "id": "vol08",
+      "title": "九转篇",
+      "subtitle": "空间粉碎",
+      "realm": "斗尊",
+      "realmClass": "dou-zun",
+      "num": "八",
+      "description": "RLHF、PPO、DPO、安全对齐",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 2974
+    },
+    {
+      "id": "vol09",
+      "title": "成圣篇",
+      "subtitle": "半步成神",
+      "realm": "斗圣",
+      "realmClass": "dou-sheng",
+      "num": "九",
+      "description": "MoE、Flash Attention、Megatron-LM、长文本",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 3283
+    },
+    {
+      "id": "vol10",
+      "title": "帝境篇",
+      "subtitle": "破碎虚空",
+      "realm": "斗帝",
+      "realmClass": "dou-di",
+      "num": "十",
+      "description": "自进化算法、多模态原生大统一、逻辑推理突破",
+      "isAppendix": false,
+      "icon": "📖",
+      "lines": 2894
+    },
+    {
+      "id": "huofire",
+      "title": "万火录",
+      "subtitle": "GPU 异火榜",
+      "realm": "附录",
+      "realmClass": "",
+      "num": "",
+      "description": "GPU 参数全录：从 RTX 3060 到 H200",
+      "isAppendix": true,
+      "icon": "🔥",
+      "lines": 929
+    },
+    {
+      "id": "debug",
+      "title": "反噬录",
+      "subtitle": "Debug 宝典",
+      "realm": "附录",
+      "realmClass": "",
+      "num": "",
+      "description": "炼丹失败案例集：Loss 震荡、模型坍塌、OOM 复盘",
+      "isAppendix": true,
+      "icon": "⚡",
+      "lines": 1198
+    },
+    {
+      "id": "dataset",
+      "title": "药材库",
+      "subtitle": "数据集指南",
+      "realm": "附录",
+      "realmClass": "",
+      "num": "",
+      "description": "开源数据集收录与洗炼工具",
+      "isAppendix": true,
+      "icon": "🌿",
+      "lines": 1206
+    }
+  ],
+  "home": {
+    "title": "焚诀",
+    "subtitle": "A Cultivation Guide for Foundation Models: From Dust to Deity"
+  }
+};
+</script>
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>
