@@ -265,6 +265,19 @@ function renderAppendixCard(page) {
 }
 
 // --- TOC ---
+window.scrollToHeading = function(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    const headerOffset = 80;
+    const elementPosition = el.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+    window.scrollTo({
+         top: offsetPosition,
+         behavior: "smooth"
+    });
+  }
+};
+
 function buildTOC(mdContent) {
   const tocPanel = document.getElementById('toc-panel');
   if (!mdContent) return;
@@ -280,7 +293,8 @@ function buildTOC(mdContent) {
     const id = h.id || `heading-${i}`;
     if (!h.id) h.id = id;
     const cls = h.tagName === 'H3' ? 'toc-h3' : h.tagName === 'H4' ? 'toc-h4' : '';
-    tocHtml += `<a class="toc-item ${cls}" href="#${id}">${h.textContent}</a>`;
+    // Avoid href="#" which triggers the hashchange router. Use onclick instead.
+    tocHtml += `<a class="toc-item ${cls}" onclick="scrollToHeading('${id}')">${h.textContent}</a>`;
   });
 
   tocPanel.innerHTML = tocHtml;
