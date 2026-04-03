@@ -176,6 +176,18 @@ VOLUMES = [
         "is_appendix": True,
         "icon": "🌿",
     },
+    {
+        "id": "interview",
+        "dir": "11-面经篇-天劫试炼",
+        "title": "面经篇",
+        "subtitle": "天劫试炼",
+        "realm": "附录",
+        "realm_class": "",
+        "num": "",
+        "description": "算法面经与面试通关指南：Python/ML/DL/Transformer/NLP/LLM/RAG/系统设计九重天劫",
+        "is_appendix": True,
+        "icon": "⚔️",
+    },
 ]
 
 
