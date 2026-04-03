@@ -1,0 +1,351 @@
+
+---
+
+## 附录 D：Ring Attention — 环形注意力与近无限上下文
+
+> *"普通注意力受限于单卡显存，但 Ring Attention 将注意力计算编织成一条环——数据像流水一样在 GPU 之间传递，使得上下文长度不再受限于单张显卡。"*
+
+### D.1 Ring Attention 原理
+
+```
+传统注意力的问题：
+  Q × K^T → [seq_len, seq_len] 注意力矩阵
+  当 seq_len = 1M 时，注意力矩阵 = 1M × 1M = 4TB（FP32）
+  任何单卡都无法容纳
+
+Ring Attention 的解决方案：
+  将长序列切分为多个 Block，分配到不同 GPU
+  每个 GPU 只保存自己的 Q Block 和一个流动的 K/V Block
+  K/V Block 在 GPU 之间环形传递（类似 Ring All-Reduce）
+
+  GPU 0: [Q0] + [K0,V0]  → 计算局部注意力
+  GPU 1: [Q1] + [K1,V1]  → 计算局部注意力
+  GPU 2: [Q2] + [K2,V2]  → 计算局部注意力
+  ...
+
+  第 1 步：K/V 沿环传递
+  GPU 0: [Q0] + [K3,V3]  → 计算交叉注意力
+  GPU 1: [Q1] + [K0,V0]  → 计算交叉注意力
+  ...
+
+  第 2 步：继续传递
+  GPU 0: [Q0] + [K2,V2]  → 计算交叉注意力
+  GPU 1: [Q1] + [K3,V3]  → 计算交叉注意力
+  ...
+
+  经过 N 步（N = GPU 数量），每个 Q Block 都与所有 K/V 计算了注意力
+
+核心优势：
+  - 上下文长度与 GPU 数量成正比（4 卡 → 4x 上下文）
+  - 通信与计算重叠（Block 传递时同时计算）
+  - 显存使用与单 GPU 相同（每个 GPU 只存储 1/N 的序列）
+```
+
+### D.2 Ring Attention 伪代码实现
+
+```python
+# === Ring Attention 概念实现 ===
+import torch
+import torch.nn.functional as F
+
+
+def ring_attention_blockwise(Q_block, K_blocks, V_blocks, gpu_id, num_gpus):
+    """
+    Ring Attention 的核心计算步骤
+
+    参数:
+      Q_block: [batch, heads, block_len, dim] - 当前 GPU 的 Query 块
+      K_blocks: list of [batch, heads, block_len, dim] - 所有 K 块
+      V_blocks: list of [batch, heads, block_len, dim] - 所有 V 块
+      gpu_id: 当前 GPU 的编号
+      num_gpus: GPU 总数
+
+    模拟环形传递 K/V 并计算注意力
+    """
+    num_blocks = len(K_blocks)
+    block_len = Q_block.shape[2]
+
+    # 初始化输出和注意力统计量（用于在线 Softmax）
+    output = torch.zeros_like(Q_block)
+    max_logits = torch.full((Q_block.shape[0], Q_block.shape[1], block_len),
+                            float('-inf'), device=Q_block.device)
+    sum_exp = torch.zeros_like(max_logits)
+
+    # 模拟环形传递过程
+    for step in range(num_blocks):
+        # 当前步骤应使用的 K/V 块
+        kv_idx = (gpu_id + step) % num_blocks
+        K_block = K_blocks[kv_idx]
+        V_block = V_blocks[kv_idx]
+
+        # 计算注意力分数: Q_block @ K_block^T / sqrt(d)
+        scores = torch.matmul(Q_block, K_block.transpose(-2, -1))
+        scores = scores / (Q_block.shape[-1] ** 0.5)
+
+        # 在线 Softmax（Flash Attention 的关键技术）
+        new_max = torch.max(max_logits, scores.max(dim=-1).values)
+        correction = torch.exp(max_logits - new_max)
+        sum_exp = sum_exp * correction + torch.exp(scores - new_max.unsqueeze(-1)).sum(dim=-1)
+        max_logits = new_max
+
+        # 计算加权值
+        attn_weights = torch.exp(scores - max_logits.unsqueeze(-1))
+        output = output * correction.unsqueeze(-1) + torch.matmul(attn_weights, V_block)
+
+    # 最终归一化
+    output = output / sum_exp.unsqueeze(-1)
+
+    return output
+
+
+# === 小规模模拟 ===
+batch_size = 1
+num_heads = 4
+block_len = 64
+dim = 32
+num_gpus = 4  # 模拟 4 个 GPU
+
+# 创建数据（模拟将长序列切分为 4 个 Block）
+Q_blocks = [torch.randn(batch_size, num_heads, block_len, dim) for _ in range(num_gpus)]
+K_blocks = [torch.randn(batch_size, num_heads, block_len, dim) for _ in range(num_gpus)]
+V_blocks = [torch.randn(batch_size, num_heads, block_len, dim) for _ in range(num_gpus)]
+
+# 模拟 GPU 0 的计算
+output_gpu0 = ring_attention_blockwise(Q_blocks[0], K_blocks, V_blocks, gpu_id=0, num_gpus=num_gpus)
+print("Ring Attention output shape:", output_gpu0.shape)
+# [1, 4, 64, 32] - 与 Q_block 相同的形状
+
+# 验证：完整注意力的结果应该一致
+Q_full = torch.cat(Q_blocks, dim=2)  # [1, 4, 256, 32]
+K_full = torch.cat(K_blocks, dim=2)
+V_full = torch.cat(V_blocks, dim=2)
+full_output = F.scaled_dot_product_attention(Q_full, K_full, V_full)
+# GPU 0 的输出应该等于完整输出的前 64 行
+print("Output matches standard attention:", torch.allclose(
+    output_gpu0, full_output[:, :, :block_len, :], atol=1e-5))
+```
+
+### D.3 Sequence Parallelism — 序列并行
+
+```python
+# === 序列并行 (Sequence Parallelism) ===
+
+print("""
+Sequence Parallelism 是 Megatron-LM v3 引入的并行策略，
+将序列维度（而非模型维度）分配到不同 GPU。
+
+与 Ring Attention 的区别：
+  - Ring Attention: K/V 环形传递，Q 固定
+  - Sequence Parallelism: 所有张量按序列维度切分
+
+Sequence Parallelism 的三种实现：
+
+1. Megatron-LM SP (Independent)
+   - 每个 GPU 处理不同的 token 子集
+   - 需要在 Attention 和 FFN 之间通信
+   - 适合与 TP 结合使用
+
+2. DeepSpeed Ulysses SP
+   - 序列切分 + 专家并行式路由
+   - 每个 GPU 处理 seq_len/num_gpus 的 token
+   - Attention 时 all-to-all 通信收集完整 Q/K/V
+   - 非常适合长序列 + MoE 模型
+
+3. Ring Attention SP
+   - 如上所述，K/V 环形传递
+   - 最适合极长序列（100K+ tokens）
+
+选择建议：
+  - seq_len <= 8K: 标准 Attention（无需 SP）
+  - seq_len 8K-128K: Megatron SP 或 Ulysses SP
+  - seq_len >= 128K: Ring Attention
+  - seq_len >= 1M: Ring Attention + 分布式推理
+""")
+
+# === Ulysses Sequence Parallelism 概念 ===
+def ulysses_sp_concept():
+    """展示 Ulysses SP 的工作方式"""
+    print("""
+    假设 4 个 GPU, 序列长度 1024:
+
+    切分阶段（按序列维度切分）:
+    GPU 0: tokens [0..255]
+    GPU 1: tokens [256..511]
+    GPU 2: tokens [512..767]
+    GPU 3: tokens [768..1023]
+
+    Attention 前 (all-to-all 重排):
+    按头切分，收集每个头对应的完整序列
+    GPU 0: heads 0,1 的全部 token
+    GPU 1: heads 2,3 的全部 token
+    GPU 2: heads 4,5 的全部 token
+    GPU 3: heads 6,7 的全部 token
+
+    Attention:
+    每个 GPU 独立计算分配到的头
+    GPU 0: attention for heads 0,1 (full sequence)
+    GPU 1: attention for heads 2,3 (full sequence)
+    ...
+
+    Attention 后 (all-to-all 恢复):
+    恢复为序列切分格式
+    GPU 0: tokens [0..255] with all heads updated
+
+    优势：
+    - 通信量 = O(seq_len × hidden) per all-to-all
+    - 可与 TP 组合（嵌套并行）
+    - DeepSeek-V3 训练使用此方案
+    """)
+ulysses_sp_concept()
+```
+
+### D.4 推测解码 — 加速推理的黑科技
+
+```python
+# === 推测解码 (Speculative Decoding) ===
+
+print("""
+推测解码：用小模型"猜"，用大模型"验"
+
+传统自回归解码：
+  每步只生成 1 个 token
+  大模型推理 1 token ≈ 50ms
+  生成 100 tokens ≈ 5000ms
+
+推测解码：
+  1. 小模型快速生成 K 个候选 token（如 K=5）
+     小模型 5 tokens ≈ 10ms
+  2. 大模型一次性验证这 K 个 token
+     大模型 K tokens ≈ 60ms（并行验证，非 K×50ms）
+  3. 接受正确的 token，拒绝错误的 token
+  4. 从第一个错误处重新开始
+
+加速效果：
+  - 理想情况下：加速比 ≈ K（如果全部接受）
+  - 实际情况：加速比 ≈ 2-3x（通常接受 60-80%）
+  - 小模型越大，接受率越高，但猜测速度越慢
+  - 需要平衡：小模型大小 vs 接受率 vs 猜测速度
+
+┌──────────────────────────────────────────────────────┐
+│  推测解码流程可视化                                    │
+│                                                      │
+│  Draft Model (小):  [I] [love] [AI] [and] [ML]      │
+│                              ↑                       │
+│  Verification (大):  [I] [love] [AI] [deep] [ML]   │
+│                                          ↑           │
+│  Accepted:           [I] [love] [AI]                    │
+│  Rejected from:      [deep] → 从此重新生成            │
+│                                                      │
+│  实际输出: [I] [love] [AI] [deep] [learning] ...     │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+实现工具：
+  - HuggingFace: generate(..., speculative_model=draft_model)
+  - vLLM: 内置 speculative decoding 支持
+  - SGLang: 高效推测解码实现
+""")
+```
+
+```python
+# === 使用 HuggingFace 进行推测解码 ===
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# 大模型（验证模型）— 斗帝级别的智慧
+target_model_name = "Qwen/Qwen2.5-7B-Instruct"
+# 小模型（推测模型）— 斗师级别但速度极快
+draft_model_name = "Qwen/Qwen2.5-1.5B-Instruct"
+
+# 实际使用时取消注释
+# target_tokenizer = AutoTokenizer.from_pretrained(target_model_name)
+# target_model = AutoModelForCausalLM.from_pretrained(
+#     target_model_name, torch_dtype=torch.float16, device_map="auto"
+# )
+# draft_tokenizer = AutoTokenizer.from_pretrained(draft_model_name)
+# draft_model = AutoModelForCausalLM.from_pretrained(
+#     draft_model_name, torch_dtype=torch.float16, device_map="auto"
+# )
+
+# 使用推测解码生成
+# outputs = target_model.generate(
+#     speculative_model=draft_model,  # 传入小模型
+#     input_ids=input_ids,
+#     max_new_tokens=200,
+#     temperature=0.7,
+#     do_sample=True,
+# )
+# 注意：大模型和小模型需要使用相同的 tokenizer
+```
+
+### D.5 KV Cache 压缩技术
+
+```python
+# === KV Cache 压缩方法对比 ===
+
+print("""
+KV Cache 压缩方法一览：
+
+┌──────────────────┬──────────────┬───────────────────────────┐
+│ 方法             │ 压缩率      │ 策略                      │
+├──────────────────┼──────────────┼───────────────────────────┤
+│ H2O              │ 2-4x        │ 保留最近 + 重要的 KV      │
+│ Scissorhands     │ 2-4x        │ 基于注意力分数淘汰        │
+│ StreamingLLM     │ 稳定窗口    │ 保留 Sink Token + 滑动窗口 │
+│ KV-Cache quant   │ 2-4x        │ 量化 KV（FP8/INT8）       │
+│ GQA              │ 2-8x        │ 多个 Q 共享一组 KV        │
+│ Cross-Layer KV   │ 2-4x        │ 跨层共享 KV Cache         │
+│ PyramidKV        │ 2-4x        │ 底层保留多、顶层保留少    │
+│ Heavy Hitter     │ 3-5x        │ 只保留注意力最高的 token  │
+└──────────────────┴──────────────┴───────────────────────────┘
+
+注意：
+- 所有压缩方法都会有一定质量损失
+- 压缩比越高，质量损失越大
+- 推荐从 GQA（架构层面）+ FP8量化（推理层面）入手
+- 其他方法可作为补充
+""")
+
+# === StreamingLLM 简化实现 ===
+def streaming_llm_attention(Q, K, V, sink_size=4, window_size=512):
+    """
+    StreamingLLM: 保留 Sink Token + 滑动窗口
+
+    Sink Token（注意力汇聚点）：
+      位置最开始的几个 token 是"注意力汇聚点"
+      丢弃它们会导致模型注意力崩塌
+      保留它们可以让模型在无限长序列上保持稳定
+
+    滑动窗口：
+      保留最近的 window_size 个 token 的 KV Cache
+      丢弃更早的 token
+    """
+    seq_len = Q.shape[2]
+
+    if seq_len <= sink_size + window_size:
+        # 序列不够长，使用完整注意力
+        return torch.nn.functional.scaled_dot_product_attention(Q, K, V)
+
+    # 保留 Sink Token + 滑动窗口
+    K_trimmed = torch.cat([K[:, :, :sink_size, :],
+                           K[:, :, -(window_size):, :]], dim=2)
+    V_trimmed = torch.cat([V[:, :, :sink_size, :],
+                           V[:, :, -(window_size):, :]], dim=2)
+
+    # 用 trimmed KV 计算注意力
+    output = torch.nn.functional.scaled_dot_product_attention(Q, K_trimmed, V_trimmed)
+
+    return output
+
+# 示例
+Q = torch.randn(1, 8, 1024, 64)  # 1024 tokens
+K = torch.randn(1, 8, 1024, 64)
+V = torch.randn(1, 8, 1024, 64)
+
+output = streaming_llm_attention(Q, K, V, sink_size=4, window_size=512)
+print("StreamingLLM output shape:", output.shape)
+print("KV Cache reduction: 1024 -> %d tokens (%.1fx)" % (
+    4 + 512, 1024 / (4 + 512)))
+```
+
+---
+

@@ -1,0 +1,325 @@
+---
+
+## 附录 C：空间实战进阶 — Qwen2-VL 与视频理解
+
+> *"空间之力不只是静态的感知。真正的斗宗强者，能看穿画面，能感知时间的流动，能在多帧之间建立起连贯的理解。"*
+
+### C.1 Qwen2-VL：新一代视觉语言模型
+
+Qwen2-VL 是阿里云推出的新一代视觉语言模型，其核心创新在于 **M-RoPE（Multi-Modal Rotary Position Embedding）**——将位置编码从纯文本扩展到多模态。
+
+```python
+# === Qwen2-VL 架构解析 ===
+"""
+Qwen2-VL 核心创新：
+
+1. M-RoPE（多模态旋转位置编码）
+   传统 RoPE: 仅编码文本序列位置
+   M-RoPE:   分别编码 3 个维度
+     - 时间维度 (temporal):  帧/序列顺序
+     - 空间维度 (spatial):   高度 (height)
+     - 空间维度 (spatial):   宽度 (width)
+   
+   三维位置编码拼接后注入注意力计算，
+   使模型能同时理解"第几帧"和"在图像的哪个位置"。
+
+2. 动态分辨率
+   - 不再将图像固定 resize 到 224×224
+   - 按原始比例处理，每 28×28 为一个 patch
+   - 最长边最多 28×128 = 3584 像素
+   - 长文档/长图可分块处理
+
+3. ViT 编码器
+   - 修改版 ViT（支持动态分辨率）
+   - 支持 Naive Dynamic Resolution 和 M-RoPE
+"""
+
+# === Qwen2-VL 推理实战 ===
+# 安装: pip install qwen-vl-utils transformers
+
+from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+from qwen_vl_utils import process_vision_info
+
+model_name = "Qwen/Qwen2-VL-7B-Instruct"
+
+# 加载模型和处理器
+model = Qwen2VLForConditionalGeneration.from_pretrained(
+    model_name,
+    torch_dtype="auto",
+    device_map="auto",
+)
+processor = AutoProcessor.from_pretrained(model_name)
+
+# ===== 场景一：单图理解 =====
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image", "image": "https://example.com/photo.jpg"},
+            {"type": "text", "text": "请详细描述这张图片的内容。"},
+        ],
+    },
+]
+
+# 处理输入
+text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+image_inputs, video_inputs = process_vision_info(messages)
+inputs = processor(
+    text=[text],
+    images=image_inputs,
+    videos=video_inputs,
+    padding=True,
+    return_tensors="pt",
+).to(model.device)
+
+# 生成回答
+generated_ids = model.generate(**inputs, max_new_tokens=512)
+generated_ids_trimmed = [
+    out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+]
+output_text = processor.batch_decode(
+    generated_ids_trimmed,
+    skip_special_tokens=True,
+    clean_up_tokenization_spaces=False,
+)
+print("回答:", output_text[0])
+
+# ===== 场景二：多图对比 =====
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image", "image": "image_a.jpg"},
+            {"type": "image", "image": "image_b.jpg"},
+            {"type": "text", "text": "比较这两张图片的区别。"},
+        ],
+    },
+]
+# 处理流程同上...
+
+# ===== 场景三：视频理解 =====
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "video",
+                "video": "video.mp4",
+                "max_pixels": 360 * 420,  # 控制视频每帧分辨率
+                "fps": 1.0,               # 每秒采样 1 帧
+            },
+            {"type": "text", "text": "请总结这个视频的主要内容。"},
+        ],
+    },
+]
+```
+
+### C.2 Qwen2-VL 微调实战
+
+```python
+# === 使用 LLaVA-NeXT/XTuner 微调 Qwen2-VL ===
+# 推荐工具: XTuner (pip install xtuner)
+
+# 第一步：准备数据集（LLaVA 格式）
+"""
+数据格式 (JSONL):
+{"messages": [{"role": "user", "content": "<image>这是什么？"}, {"role": "assistant", "content": "一只猫"}], "images": ["cat.jpg"]}
+{"messages": [{"role": "user", "content": "<image>描述图片"}, {"role": "assistant", "content": "蓝色天空下..."}], "images": ["sky.jpg"]}
+"""
+
+# 第二步：配置 XTuner 微调
+# 保存为: qwen2vl_lora_finetune.py (或使用命令行)
+xtuner_config = """
+# 基础模型配置
+_pretrained_model = 'Qwen/Qwen2-VL-7B-Instruct'
+
+# LoRA 配置
+lora_rank = 64
+lora_alpha = 128
+lora_dropout = 0.05
+lora_target_modules = [
+    'q_proj', 'k_proj', 'v_proj', 'o_proj',
+    'gate_proj', 'up_proj', 'down_proj',
+]
+
+# 训练超参
+max_length = 4096
+batch_size = 1
+accumulation_steps = 16          # 等效 batch_size = 16
+learning_rate = 1e-4
+warmup_ratio = 0.03
+num_epochs = 3
+optim_type = 'AdamW'
+bf16 = True
+
+# 数据集
+data_path = './data/train.jsonl'
+image_folder = './data/images'
+"""
+
+print("Qwen2-VL 微调要点：")
+print("  1. LoRA rank 建议 64-128（视觉任务比纯文本需要更大的 rank）")
+print("  2. 目标模块包含 q/k/v/o 投影 + FFN 的 gate/up/down")
+print("  3. 学习率 1e-4（比纯文本 SFT 的 2e-5 更大）")
+print("  4. 务必使用 bf16 训练")
+print("  5. 数据质量 >> 数量（1000条高质量 > 10000条低质量）")
+```
+
+### C.3 视频理解技术深度解析
+
+视频理解相比图像理解，核心挑战在于如何处理**时间维度**。
+
+```python
+# === 视频理解的三种主流方案 ===
+
+video_approaches = {
+    "均匀采样": {
+        "原理": "从视频中均匀抽取 N 帧，每帧当作独立图像处理",
+        "优点": "实现简单，计算量可控",
+        "缺点": "可能丢失关键帧（如快速动作）",
+        "代表": "LLaVA-Video, Qwen2-VL (fps参数)",
+        "代码": "fps=1.0 → 每秒1帧; fps=0.5 → 每2秒1帧",
+    },
+    "Token 压缩": {
+        "原理": "先用轻量模型提取每帧特征，再用池化/注意力压缩为少量 token",
+        "优点": "可处理超长视频，显存友好",
+        "缺点": "压缩可能丢失细节",
+        "代表": "VideoLLaMA (帧间注意力池化), LongVA",
+        "代码": "pool_size=2 → 每2帧合并为1个token",
+    },
+    "时序注意力": {
+        "原理": "在帧间引入时间注意力，显式建模帧间关系",
+        "优点": "时间理解更强",
+        "缺点": "计算量大，长视频难以扩展",
+        "代表": "TimeSformer, VideoChat",
+        "代码": "temporal_attn(Q_t, K_all, V_all)",
+    },
+}
+
+print("视频理解方案对比：\n")
+for name, info in video_approaches.items():
+    print(f"  {name}:")
+    print(f"    原理: {info['原理']}")
+    print(f"    优点: {info['优点']}")
+    print(f"    缺点: {info['缺点']}")
+    print(f"    代表: {info['代表']}")
+    print()
+
+# === 视频理解的评估基准 ===
+print("视频理解评估基准：")
+print()
+print("  基准             | 评估维度           | 说明")
+print("  -----------------|-------------------|------------------")
+print("  Video-ChatGPT     | 定性评估           | GPT-4 辅助打分")
+print("  MVBench           | 时间理解/空间推理   | 300+ 选择题")
+print("  Video-MME         | 综合多维度         | 涵盖 6 个子维度")
+print("  EgoSchema         | 第一人称视频理解    | 5000+ 推理题")
+print("  LongVideoBench    | 长视频理解(1-60min)| 长视频评估")
+print("  MLVU              | 多维度视频理解     | 中文视频评估")
+```
+
+### C.4 InternVL2：视觉语言通用模型
+
+InternVL2 是上海人工智能实验室推出的系列模型，采用了独特的 **PixelShuffle 动态分辨率**方案。
+
+```python
+# === InternVL2 架构特点 ===
+"""
+InternVL2 架构：
+
+┌─────────────────────────────────────────────────────┐
+│  输入图像（任意分辨率）                              │
+│  ┌─────────────────────────────────────────────┐   │
+│  │          原始图像 (e.g., 1920×1080)          │   │
+│  └────────────────────┬────────────────────────┘   │
+│                       │                             │
+│                       ▼                             │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  动态分块：按 448×448 划分为多个 patch       │   │
+│  │  [patch_1][patch_2][patch_3]                 │   │
+│  │  [patch_4][patch_5][patch_6]                 │   │
+│  │  每个patch → ViT → 256个visual token         │   │
+│  └────────────────────┬────────────────────────┘   │
+│                       │                             │
+│                       ▼                             │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  PixelShuffle 下采样（降低token数量）         │   │
+│  │  256 → 64 tokens per patch                  │   │
+│  └────────────────────┬────────────────────────┘   │
+│                       │                             │
+│                       ▼                             │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  MLP Projector (Visual → Language)           │   │
+│  └────────────────────┬────────────────────────┘   │
+│                       │                             │
+│                       ▼                             │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  InternLM2 (语言模型)                        │   │
+│  │  处理: [IMG_TOKENS] + [TEXT_PROMPT]          │   │
+│  └─────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────┘
+
+关键创新：PixelShuffle 下采样
+  - 将 ViT 输出的特征图空间维度缩小 2x
+  - channel 维度增大 4x
+  - 然后 reshape 回 1D token 序列
+  - 效果：token 数量减少 4 倍，信息损失极小
+"""
+
+# === InternVL2 推理 ===
+from transformers import AutoModel, AutoTokenizer
+
+model = AutoModel.from_pretrained(
+    "OpenGVLab/InternVL2-8B",
+    torch_dtype="bfloat16",
+    device_map="auto",
+    trust_remote_code=True,
+)
+tokenizer = AutoTokenizer.from_pretrained(
+    "OpenGVLab/InternVL2-8B",
+    trust_remote_code=True,
+)
+
+# 图像理解
+pixel_values = load_image("photo.jpg")  # 自定义加载函数
+response = model.chat(tokenizer, pixel_values, "描述这张图片")
+print(response)
+
+# 多轮对话
+pixel_values = load_image("chart.png")
+history = []
+question = "这个图表展示了什么数据？"
+response, history = model.chat(tokenizer, pixel_values, question, history)
+print(response)
+
+question = "请提取其中的关键数据点"
+response, history = model.chat(tokenizer, pixel_values, question, history)
+print(response)
+```
+
+### C.5 多模态模型选型指南
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                多模态大模型选型指南                                │
+├──────────────┬──────────────┬──────────────┬────────────────────┤
+│   模型       │  模型大小     │  核心优势     │   推荐场景          │
+├──────────────┼──────────────┼──────────────┼────────────────────┤
+│ Qwen2-VL     │  2B/7B/72B   │ 动态分辨率    │ 通用VLM（首选）     │
+│ InternVL2    │  2B/8B/26B   │ PixelShuffle  │ 高清OCR/文档理解    │
+│ LLaVA-NeXT   │  8B/32B/72B  │ 社区活跃      │ 学术研究/快速原型   │
+│ MiniCPM-V    │  2.8B        │ 端侧部署      │ 手机/边缘设备       │
+│ GLM-4V       │  9B          │ 中文理解强     │ 中文场景            │
+│ Cambrian      │  8B/34B      │ 高分辨率      │ 医学/卫星图像       │
+└──────────────┴──────────────┴──────────────┴────────────────────┘
+
+选型建议：
+  通用场景 → Qwen2-VL-7B（综合最优）
+  中文OCR  → InternVL2-8B（文档理解强）
+  端侧部署 → MiniCPM-V-2.8（手机可跑）
+  极限精度 → Qwen2-VL-72B（需要多卡）
+  学术研究 → LLaVA-NeXT（论文复现友好）
+```
+
+---
+

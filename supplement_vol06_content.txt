@@ -1,0 +1,832 @@
+
+---
+
+## 第五章：缩骨功法 — 模型量化与推理加速
+
+> *"凌空飞行的速度，不仅取决于斗气强弱，更取决于你是否能将自身缩至最小、将每缕斗气发挥到极致。量化，便是这门缩骨功法的核心。"*
+
+### 5.1 量化的本质 — 舍弃精度换取速度
+
+在推理阶段，模型参数的精度需求远低于训练阶段。就像飞行时不需要精确到每一根头发丝的位置，只需要保持整体轮廓。
+
+#### 5.1.1 什么是量化？
+
+量化将高精度浮点数（FP32/FP16）映射为低精度整数（INT8/INT4），从而：
+- **减小模型体积**：7B 模型从 ~14GB（FP16）→ ~3.5GB（INT4）
+- **加快推理速度**：整数运算远快于浮点运算
+- **降低显存占用**：单卡可运行更大模型
+
+```python
+# === 缩骨功法：量化的本质 ===
+import torch
+
+# FP32 — 修炼者的完整真气（32位浮点）
+tensor_fp32 = torch.tensor([3.14159265, 2.71828183, 1.41421356], dtype=torch.float32)
+print(f"FP32: {tensor_fp32}, size: {tensor_fp32.element_size()} bytes/element")
+
+# FP16 — 半步缩骨（16位浮点，训练常用）
+tensor_fp16 = tensor_fp32.half()
+print(f"FP16: {tensor_fp16}, size: {tensor_fp16.element_size()} bytes/element")
+
+# INT8 — 八倍缩骨（8位整数）
+tensor_int8 = tensor_fp32.quantize_per_tensor(
+    scale=0.01, zero_point=0, dtype=torch.qint8
+)
+print(f"INT8: {tensor_int8}, size: {tensor_int8.element_size()} bytes/element")
+# INT8: size: 1 bytes/element — volume reduced 4x!
+
+# === Precision loss visualization ===
+original = torch.randn(1000)
+for name, dtype in [("FP32", torch.float32), ("FP16", torch.float16), ("BF16", torch.bfloat16)]:
+    converted = original.to(dtype).float()
+    mse = ((original - converted) ** 2).mean().item()
+    max_err = (original - converted).abs().max().item()
+    print(f"{name}: MSE={mse:.8f}, Max Error={max_err:.6f}")
+# FP32: MSE=0.00000000, Max Error=0.000000
+# FP16: MSE=0.00000153, Max Error=0.001953
+# BF16: MSE=0.00020478, Max Error=0.007812
+```
+
+#### 5.1.2 量化类型全览
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                      量化类型全景图                                 │
+├──────────────┬──────────────┬──────────────┬───────────────────────┤
+│   类型       │  每参数体积  │  精度损失    │    适用场景            │
+├──────────────┼──────────────┼──────────────┼───────────────────────┤
+│ FP32 (原版)  │   4 bytes    │   无         │  训练                 │
+│ FP16         │   2 bytes    │   极小       │  训练 + 推理          │
+│ BF16         │   2 bytes    │   小         │  训练（推荐）         │
+│ INT8         │   1 byte     │   较小       │  推理加速             │
+│ INT4         │   0.5 bytes  │   中等       │  模型压缩             │
+│ GPTQ INT4    │   ~3.5 bits  │   较小       │  单卡运行大模型       │
+│ AWQ INT4     │   ~3.5 bits  │   较小       │  单卡运行大模型(快)   │
+│ GGUF Q4_K_M  │   ~4.5 bits  │   中等       │  CPU/GPU 混合推理     │
+│ EXL2         │   可变(2-8bit)│  可调       │  极致速度              │
+└──────────────┴──────────────┴──────────────┴───────────────────────┘
+```
+
+### 5.2 GPTQ — 事后量化经典功法
+
+GPTQ (Generative Pre-trained Transformer Quantization) 是最主流的**训练后量化 (PTQ)** 方法，通过最小化量化误差的逐层优化来实现。
+
+```python
+# === GPTQ 量化实战 ===
+# 安装: pip install auto-gptq transformers optimum
+
+from transformers import AutoModelForCausalLM, AutoTokenizer, GPTQConfig
+
+# 第一步：选择待量化的模型（缩骨前）
+model_name = "Qwen/Qwen2.5-7B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# 第二步：配置量化参数（丹方）
+gptq_config = GPTQConfig(
+    bits=4,                  # 量化位数：4-bit 是性价比最优解
+    group_size=128,          # 分组量化：每128个参数共享一组缩放因子
+    desc_act=True,           # 激活感知排序：按激活值重要性排列权重
+    dataset="c4",            # 校准数据集：用于量化参数拟合
+    tokenizer=tokenizer,     # 分词器：用于处理校准数据
+)
+
+# 第三步：执行量化（缩骨修炼）
+print("Starting GPTQ quantization... may take 30-60 minutes")
+quantized_model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    quantization_config=gptq_config,
+    torch_dtype=torch.float16,
+    device_map="auto",
+)
+
+# 第四步：保存量化后的模型
+save_path = "./qwen2.5-7b-gptq-int4"
+quantized_model.save_pretrained(save_path)
+tokenizer.save_pretrained(save_path)
+print(f"Quantization done! Saved to {save_path}")
+
+# 第五步：加载量化模型进行推理（缩骨完成后飞行）
+from transformers import pipeline
+
+pipe = pipeline(
+    "text-generation",
+    model=save_path,
+    tokenizer=tokenizer,
+    torch_dtype=torch.float16,
+    device_map="auto",
+)
+
+result = pipe("How to accelerate model inference?", max_new_tokens=100)
+print(result[0]["generated_text"])
+```
+
+#### GPTQ 量化参数选择指南
+
+| 参数 | 推荐值 | 说明 |
+|------|--------|------|
+| `bits` | 4 | 4-bit 是性价比最高；3-bit 质量下降明显；8-bit 体积优势小 |
+| `group_size` | 128 | 越小精度越高，但体积略增；32/64/128 都可 |
+| `desc_act` | True | 开启后精度更好，但推理速度略慢（建议开启） |
+| `dataset` | "c4" / "wikitext2" | 校准数据集，用于估计量化误差 |
+
+### 5.3 AWQ — 激活感知量化新法
+
+AWQ (Activation-aware Weight Quantization) 通过分析激活值的分布来识别"重要权重"，对重要权重保留更高精度。
+
+```python
+# === AWQ 量化实战 ===
+# 安装: pip install autoawq
+
+from awq import AutoAWQForCausalLM
+from transformers import AutoTokenizer
+
+model_name = "Qwen/Qwen2.5-7B-Instruct"
+save_path = "./qwen2.5-7b-awq-int4"
+
+# 第一步：加载待量化模型
+model = AutoAWQForCausalLM.from_pretrained(model_name, safetensors=True)
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+
+# 第二步：配置量化参数
+quant_config = {
+    "zero_point": True,       # 零点校正
+    "q_group_size": 128,      # 分组大小
+    "w_bit": 4,              # 4-bit 量化
+    "version": "GEMM",       # 使用 GEMM 内核（比 GEMV 更快）
+}
+
+# 第三步：执行量化
+print("AWQ quantization in progress...")
+model.quantize(tokenizer, quant_config=quant_config)
+
+# 第四步：保存
+model.save_quantized(save_path)
+tokenizer.save_pretrained(save_path)
+print(f"AWQ done! Saved to {save_path}")
+
+# 第五步：推理验证
+model = AutoAWQForCausalLM.from_quantized(save_path)
+tokenizer = AutoTokenizer.from_pretrained(save_path)
+model.to("cuda")
+
+tokens = tokenizer("Explain AWQ vs GPTQ", return_tensors="pt").to("cuda")
+output = model.generate(**tokens, max_new_tokens=100)
+print(tokenizer.decode(output[0], skip_special_tokens=True))
+```
+
+#### GPTQ vs AWQ 对比
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    GPTQ vs AWQ 对决                                 │
+├──────────────┬───────────────────────┬──────────────────────────────┤
+│   维度       │      GPTQ             │      AWQ                    │
+├──────────────┼───────────────────────┼──────────────────────────────┤
+│ 核心思想     │ 最小化逐层量化误差     │ 保护激活值重要的权重         │
+│ 量化速度     │ 较慢（逐层优化）       │ 较快（全局一次性）           │
+│ 推理速度     │ 快                    │ 更快（支持 GEMM 内核）       │
+│ 精度保持     │ 好                    │ 好（略优）                   │
+│ 显存占用     │ 极低                  │ 极低                        │
+│ 社区支持     │ 更广泛                 │ 快速增长                    │
+│ 推荐场景     │ 通用                   │ 追求极致推理速度             │
+└──────────────┴───────────────────────┴──────────────────────────────┘
+
+结论：两者精度相当，AWQ 推理速度通常更快，建议优先尝试 AWQ。
+但 GPTQ 生态更成熟，老模型可能只有 GPTQ 版本可用。
+```
+
+### 5.4 vLLM — 高性能推理引擎
+
+vLLM 是当前最流行的 LLM 推理引擎，通过 **PagedAttention** 技术实现高效的 KV Cache 管理，将推理吞吐量提升 2-4 倍。
+
+```python
+# === vLLM 快速启动 ===
+# 安装: pip install vllm
+
+# 方式一：命令行直接启动（最简单）
+# python -m vllm.entrypoints.openai.api_server \
+#     --model Qwen/Qwen2.5-7B-Instruct \
+#     --tensor-parallel-size 1 \
+#     --max-model-len 8192 \
+#     --gpu-memory-utilization 0.9
+
+# 方式二：离线推理
+from vllm import LLM, SamplingParams
+
+llm = LLM(
+    model="Qwen/Qwen2.5-7B-Instruct",
+    tensor_parallel_size=1,         # GPU 数量
+    max_model_len=8192,             # 最大上下文长度
+    gpu_memory_utilization=0.9,     # GPU 显存使用率
+    quantization="awq",             # 指定量化方式（可选 awq/gptq/gguf）
+)
+
+sampling_params = SamplingParams(
+    temperature=0.7,
+    top_p=0.9,
+    max_tokens=512,
+)
+
+prompts = [
+    "请用斗破苍穹的风格解释什么是深度学习",
+    "为什么量化后的模型推理更快？",
+    "比较 GPTQ 和 AWQ 的优缺点",
+]
+
+outputs = llm.generate(prompts, sampling_params)
+for output in outputs:
+    print(f"Prompt: {output.prompt!r}")
+    print(f"Generated: {output.outputs[0].text[:200]}")
+    print("---")
+
+# === 吞吐量测试 ===
+import time
+
+test_prompts = ["Explain deep learning concept #" + str(i) for i in range(100)]
+start = time.time()
+outputs = llm.generate(test_prompts, SamplingParams(max_tokens=50))
+elapsed = time.time() - start
+print(f"\nThroughput: {len(test_prompts) / elapsed:.2f} requests/second")
+# vLLM 通常可达 5-20 req/s
+```
+
+#### PagedAttention 原理
+
+```
+传统 KV Cache（显存碎片化严重）：
+┌──────────────────────────────────────────────┐
+│  Request 1: [████████████░░░░░░░░] 预留空间  │  ← 大量浪费
+│  Request 2: [██████░░░░░░░░░░░░] 预留空间   │
+│  Request 3: [████░░░░░░░░░░░░░░] 预留空间    │
+│  总需求 = max_len x batch_size（按最大分配） │
+└──────────────────────────────────────────────┘
+
+PagedAttention（像虚拟内存一样管理）：
+┌──────────────────────────────────────────────┐
+│  物理页: [██][██][██][██][██][██][██][██]... │
+│  Req 1:   [▓▓][▓▓][▓▓][  ]                   │  ← 按需分配
+│  Req 2:   [▓▓][▓▓]                           │  ← 不浪费
+│  Req 3:   [▓▓][▓▓][▓▓]                       │
+│  空闲页:  [  ][  ][  ]...                    │  ← 可复用
+│  总需求 ≈ 实际使用量（按需分页）              │
+└──────────────────────────────────────────────┘
+
+核心优势：
+1. 内存碎片 → 0（统一分页管理）
+2. 批处理大小 → 可提升 2-4 倍
+3. 显存利用率 → 从 ~40% → ~90%
+```
+
+### 5.5 GGUF — CPU/GPU 混合推理格式
+
+GGUF 是 llama.cpp 生态使用的模型格式，支持 CPU 推理和 CPU+GPU 混合推理，适合没有高端 GPU 的修炼者。
+
+```bash
+# === GGUF 模型转换与推理 ===
+
+# 第一步：下载原始模型
+# huggingface-cli download Qwen/Qwen2.5-7B-Instruct --local-dir ./qwen-7b
+
+# 第二步：安装 llama.cpp
+# git clone https://github.com/ggerganov/llama.cpp
+# cd llama.cpp && make
+
+# 第三步：转换为 GGUF 格式（缩骨封装）
+# python convert_hf_to_gguf.py ../qwen-7b --outtype f16 --outfile ../qwen-7b-f16.gguf
+
+# 第四步：量化（可选，进一步压缩）
+# ./llama-quantize ../qwen-7b-f16.gguf ../qwen-7b-Q4_K_M.gguf Q4_K_M
+
+# 第五步：推理
+# ./llama-cli -m ../qwen-7b-Q4_K_M.gguf -p "Explain deep learning" -n 512 -ngl 32
+# -ngl 32: 将 32 层 offload 到 GPU（其余在 CPU 运行）
+```
+
+#### GGUF 量化级别选择
+
+| 量化级别 | 每参数比特 | 7B 模型大小 | 推荐度 | 说明 |
+|---------|-----------|------------|--------|------|
+| Q4_K_M | ~4.8 bits | ~4.4 GB | ★★★★★ | 最佳平衡点 |
+| Q5_K_M | ~5.7 bits | ~5.2 GB | ★★★★ | 更高质量 |
+| Q6_K | ~6.6 bits | ~6.0 GB | ★★★ | 接近原版 |
+| Q8_0 | 8 bits | ~7.7 GB | ★★ | 几乎无损 |
+| Q2_K | ~2.9 bits | ~2.7 GB | ★ | 极端压缩，质量差 |
+
+### 5.6 推理加速方案对比与选型
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    推理加速方案全景图                                     │
+├──────────────┬──────────────┬──────────────┬────────────────────────────┤
+│   方案       │   推理速度   │   部署难度   │    适用场景                │
+├──────────────┼──────────────┼──────────────┼────────────────────────────┤
+│ HuggingFace  │   ★★☆☆☆     │   ★☆☆☆☆     │  原型验证、调试            │
+│ vLLM         │   ★★★★★     │   ★★☆☆☆     │  高吞吐 API 服务           │
+│ TGI          │   ★★★★☆     │   ★★★☆☆     │  生产环境 API              │
+│ llama.cpp    │   ★★★☆☆     │   ★★☆☆☆     │  CPU / 低显存推理          │
+│ ONNX Runtime │   ★★★★☆     │   ★★★☆☆     │  边缘设备部署              │
+│ TensorRT-LLM │   ★★★★★     │   ★★★★★     │  极致性能（NVIDIA 专属）   │
+│ Ollama       │   ★★★☆☆     │   ★☆☆☆☆     │  本地开发、快速体验        │
+│ LM Studio    │   ★★★☆☆     │   ★☆☆☆☆     │  桌面应用、GUI 体验        │
+└──────────────┴──────────────┴──────────────┴────────────────────────────┘
+
+选型决策树：
+
+你有 NVIDIA 高端 GPU（A100/H100）？
+├── 是 → 追求极致性能？
+│       ├── 是 → TensorRT-LLM
+│       └── 否 → vLLM（首选）或 TGI
+└── 否 → 有 GPU 但显存有限（<=24GB）？
+        ├── 是 → vLLM + AWQ/GPTQ 量化
+        └── 否 → llama.cpp (GGUF) CPU 推理
+                或 Ollama 一键启动
+```
+
+---
+
+## 第六章：神识探查 — RAG 进阶：重排序与高级检索
+
+> *"万物追溯的初级阶段，只需打开图书馆的门。但真正的高手，能在百万卷书中，精准翻到那一页。这便是重排序的力量。"*
+
+### 6.1 为什么需要重排序？
+
+前面第三章学过的向量检索（Embedding Search）属于**粗筛阶段**——从海量文档中快速找到候选集。但 Embedding 模型的语义理解有限，检索结果中往往混入不相关内容。
+
+**重排序 (Re-ranking)** 是精排阶段，使用更强大的 Cross-Encoder 模型对候选文档重新打分。
+
+```
+检索流程全景：
+
+用户问题："如何量化一个7B模型？"
+       │
+       ▼
+  ┌─────────────────────────────────────────────────┐
+  │  第一阶段：粗筛 (Retrieval)                      │
+  │  Embedding 模型 → 向量检索 → Top-50 候选文档     │
+  │  特点：快速、覆盖广、精度一般                     │
+  │  工具：FAISS / Qdrant / Milvus                  │
+  └─────────────────────────────────────────────────┘
+       │
+       ▼
+  ┌─────────────────────────────────────────────────┐
+  │  第二阶段：精排 (Re-ranking)                     │
+  │  Cross-Encoder → 逐对打分 → Top-5 精选文档       │
+  │  特点：较慢、精度高、理解更深                     │
+  │  工具：BGE-Reranker / Cohere Rerank              │
+  └─────────────────────────────────────────────────┘
+       │
+       ▼
+  ┌─────────────────────────────────────────────────┐
+  │  第三阶段：生成 (Generation)                      │
+  │  LLM + 精选文档 → 最终回答                       │
+  └─────────────────────────────────────────────────┘
+```
+
+### 6.2 Bi-Encoder vs Cross-Encoder
+
+```python
+# === 双塔编码器 vs 交叉编码器 ===
+
+# Bi-Encoder（双塔）：分别编码 Query 和 Document
+# 优点：可预计算 Document 向量，检索速度快
+# 缺点：Query 和 Document 没有交互，理解深度有限
+
+# Cross-Encoder（交叉）：将 Query 和 Document 拼接后一起编码
+# 优点：Query 和 Document 深度交互，精度高
+# 缺点：无法预计算，每对都需要过一次模型，速度慢
+
+from sentence_transformers import CrossEncoder
+
+# 加载 Cross-Encoder 重排序模型
+# BGE-Reranker-v2-m3: 中英文通用，多语言重排序
+reranker = CrossEncoder("BAAI/bge-reranker-v2-m3")
+
+query = "如何量化一个大语言模型？"
+documents = [
+    "模型量化是将浮点参数转换为低精度整数的压缩技术，如INT4、INT8。",
+    "Python是一种流行的编程语言，广泛应用于数据科学和机器学习。",
+    "GPTQ和AWQ是目前最主流的LLM量化方法，支持4-bit量化。",
+    "深度学习的训练过程需要大量的GPU计算资源。",
+    "vLLM是一个高性能推理引擎，通过PagedAttention加速推理。",
+]
+
+# Cross-Encoder 打分（Query + Document 拼接输入）
+pairs = [[query, doc] for doc in documents]
+scores = reranker.predict(pairs)
+
+# 按分数排序
+ranked_results = sorted(zip(documents, scores), key=lambda x: x[1], reverse=True)
+
+print("Reranking results:")
+for i, (doc, score) in enumerate(ranked_results, 1):
+    print(f"  {i}. [score: {score:.4f}] {doc[:60]}...")
+
+# 输出示例：
+#   1. [score: 0.9832] 模型量化是将浮点参数转换为低精度整数的压缩技术...
+#   2. [score: 0.9756] GPTQ和AWQ是目前最主流的LLM量化方法...
+#   3. [score: 0.1234] vLLM是一个高性能推理引擎...
+#   4. [score: 0.0087] Python是一种流行的编程语言...
+#   5. [score: 0.0032] 深度学习的训练过程需要大量的GPU计算资源...
+```
+
+### 6.3 完整 RAG + Reranker 实战
+
+```python
+# === 带重排序的完整 RAG 系统 ===
+# 安装: pip install sentence-transformers faiss-cpu rank_bm25
+
+import numpy as np
+from sentence_transformers import SentenceTransformer, CrossEncoder
+import faiss
+
+# ========== 配置 ==========
+# 检索模型（Bi-Encoder）— 快速粗筛
+retriever = SentenceTransformer("BAAI/bge-small-zh-v1.5")
+# 重排序模型（Cross-Encoder）— 精确精排
+reranker = CrossEncoder("BAAI/bge-reranker-v2-m3")
+
+# ========== 知识库 ==========
+documents = [
+    "GPTQ 是一种训练后量化方法，通过最小化逐层重建误差来量化权重，支持 INT4/INT8 量化。",
+    "AWQ（激活感知量化）通过保护对激活值影响大的权重来实现高精度量化。",
+    "vLLM 使用 PagedAttention 技术管理 KV Cache，将推理吞吐量提升 2-4 倍。",
+    "Flash Attention 通过 IO 感知算法减少显存访问次数，实现精确注意力计算的加速。",
+    "LoRA 通过冻结原始权重、训练低秩矩阵来实现参数高效微调。",
+    "DeepSpeed ZeRO 将模型参数、梯度和优化器状态分布到多张 GPU 上。",
+    "RLHF 使用人类反馈训练奖励模型，再通过 PPO 优化语言模型的对齐度。",
+    "DPO 是 RLHF 的替代方案，直接从偏好数据中学习，无需训练奖励模型。",
+    "QLoRA 使用 4-bit 量化加载基础模型，结合 LoRA 进行高效微调。",
+    "RAG 检索增强生成通过外部知识库提供最新信息，减少模型幻觉。",
+    "混合检索结合向量检索（语义匹配）和 BM25（关键词匹配），提高召回率。",
+    "Embedding 模型将文本转换为高维向量，语义相似的文本在向量空间中距离较近。",
+]
+
+# ========== 索引构建 ==========
+doc_embeddings = retriever.encode(documents, normalize_embeddings=True)
+dimension = doc_embeddings.shape[1]
+
+# FAISS 索引
+index = faiss.IndexFlatIP(dimension)  # 内积（向量已归一化 = 余弦相似度）
+index.add(doc_embeddings.astype(np.float32))
+
+
+# ========== 检索函数 ==========
+def rag_search(query_str, top_k=3, rerank_top_k=3):
+    """带重排序的 RAG 检索"""
+    # 阶段一：向量粗筛
+    query_embedding = retriever.encode([query_str], normalize_embeddings=True)
+    distances, indices = index.search(query_embedding.astype(np.float32), top_k * 3)
+
+    candidates = []
+    for idx, dist in zip(indices[0], distances[0]):
+        if idx >= 0:
+            candidates.append((documents[idx], float(dist)))
+
+    print("Stage 1 - Coarse retrieval (Top-%d):" % len(candidates))
+    for i, (doc, score) in enumerate(candidates):
+        print("  %d. [%.4f] %s..." % (i + 1, score, doc[:50]))
+
+    # 阶段二：重排序精排
+    pairs = [[query_str, doc] for doc, _ in candidates]
+    rerank_scores = reranker.predict(pairs)
+
+    ranked = sorted(zip(candidates, rerank_scores),
+                    key=lambda x: x[1], reverse=True)
+
+    print("\nStage 2 - Reranking (Top-%d):" % rerank_top_k)
+    results = []
+    for i, ((doc, vec_score), rerank_score) in enumerate(ranked[:rerank_top_k]):
+        print("  %d. [rerank: %.4f] %s..." % (i + 1, rerank_score, doc[:60]))
+        results.append(doc)
+
+    return results
+
+
+# ========== 使用 ==========
+query = "如何在小显存上微调大模型？"
+context_docs = rag_search(query)
+
+# 构建提示词
+context_str = "\n".join(["[%d] %s" % (i + 1, doc) for i, doc in enumerate(context_docs)])
+prompt_parts = [
+    "根据以下参考资料回答问题。",
+    "",
+    "参考资料：",
+    context_str,
+    "",
+    "问题：" + query,
+    "",
+    "回答："
+]
+final_prompt = "\n".join(prompt_parts)
+print("\nFinal prompt:\n" + final_prompt[:300] + "...")
+```
+
+### 6.4 高级 RAG 技术概览
+
+| 技术 | 原理 | 适用场景 |
+|------|------|---------|
+| **HyDE** | 让 LLM 先生成假设答案，用答案而非问题去检索 | 复杂问题、专业领域 |
+| **Multi-Query** | 让 LLM 将问题改写为多个版本，分别检索后合并 | 提高召回率 |
+| **Parent-Child Chunk** | 文档分层分块，检索子块时返回父块 | 保持上下文完整性 |
+| **Contextual Compression** | 检索后压缩文档，只保留与问题相关的部分 | 长文档、节省 token |
+| **Self-RAG** | 让模型自己决定是否需要检索、检索结果是否有用 | 减少不必要的检索 |
+
+```python
+# === HyDE：假设性文档嵌入 ===
+def hyde_retrieval(query_str, llm_pipe, retriever, index, documents, top_k=3):
+    """让模型先生成一个假设性回答，再用回答去检索"""
+
+    # 第一步：生成假设性文档（假装模型已经知道答案）
+    hyde_prompt = "请回答以下问题，即使不确定也要给出一个合理的回答：\n" + query_str
+    hyde_answer = llm_pipe(hyde_prompt, max_new_tokens=100)[0]["generated_text"]
+
+    print("Hypothetical answer: " + hyde_answer[:100] + "...")
+
+    # 第二步：用假设性回答去检索（语义比问题更接近真实文档）
+    hyde_embedding = retriever.encode([hyde_answer], normalize_embeddings=True)
+    distances, indices = index.search(hyde_embedding.astype(np.float32), top_k)
+
+    results = []
+    for idx in indices[0]:
+        if idx >= 0:
+            results.append(documents[idx])
+
+    return results
+
+
+# === Multi-Query：多问题检索 ===
+def multi_query_retrieval(query_str, llm_pipe, retriever, index, documents, top_k=3):
+    """生成多个改写版本的问题，分别检索后合并结果"""
+
+    # 生成多个改写版本
+    mq_prompt = (
+        "请将以下问题改写为3个不同但语义相同的问题版本：\n"
+        "原始问题：" + query_str + "\n\n"
+        "改写版本：\n1.\n2.\n3. "
+    )
+    rewritten = llm_pipe(mq_prompt, max_new_tokens=100)[0]["generated_text"]
+
+    # 解析出多个问题
+    queries = [query_str]  # 包含原始问题
+    for line in rewritten.split("\n"):
+        line = line.strip()
+        if line and len(line) > 0 and line[0].isdigit():
+            queries.append(line.split(".", 1)[-1].strip())
+
+    # 分别检索并合并
+    all_results = {}
+    for q in queries:
+        emb = retriever.encode([q], normalize_embeddings=True)
+        dists, idxs = index.search(emb.astype(np.float32), top_k)
+        for idx, dist in zip(idxs[0], dists[0]):
+            if idx >= 0 and idx not in all_results:
+                all_results[idx] = float(dist)
+
+    # 按相似度排序
+    sorted_results = sorted(all_results.items(), key=lambda x: x[1], reverse=True)
+    return [documents[idx] for idx, _ in sorted_results[:top_k]]
+```
+
+---
+
+## 附录 A：vLLM 部署完全指南
+
+### A.1 OpenAI 兼容 API 部署
+
+```bash
+# === 启动 vLLM 服务（兼容 OpenAI API）===
+python -m vllm.entrypoints.openai.api_server \
+    --model Qwen/Qwen2.5-7B-Instruct \
+    --served-model-name qwen-7b \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --max-model-len 8192 \
+    --gpu-memory-utilization 0.9 \
+    --enable-prefix-caching \
+    --max-num-seqs 256
+```
+
+```python
+# === 使用 OpenAI SDK 调用 vLLM ===
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="not-needed")
+
+response = client.chat.completions.create(
+    model="qwen-7b",
+    messages=[
+        {"role": "system", "content": "你是一位精通深度学习的修炼导师。"},
+        {"role": "user", "content": "用修炼小说的风格解释量化。"},
+    ],
+    max_tokens=200,
+    temperature=0.7,
+)
+
+print(response.choices[0].message.content)
+```
+
+### A.2 常用启动参数速查
+
+| 参数 | 说明 | 推荐值 |
+|------|------|--------|
+| `--max-model-len` | 最大序列长度 | 8192 / 32768 |
+| `--gpu-memory-utilization` | GPU 显存使用率 | 0.90-0.95 |
+| `--tensor-parallel-size` | 张量并行 GPU 数 | 1（单卡）/ 2-8（多卡） |
+| `--enable-prefix-caching` | 前缀缓存（APC） | 开启（多轮对话场景） |
+| `--max-num-seqs` | 最大并发请求数 | 128-256 |
+| `--quantization` | 量化方式 | awq / gptq / gguf |
+| `--dtype` | 计算精度 | float16 / bfloat16 |
+
+---
+
+## 附录 B：量化精度评估方法论
+
+```python
+# === 量化模型质量评估 ===
+from datasets import load_dataset
+import random
+
+
+def evaluate_quantization_quality(model_name, quantized_model_name, num_samples=100):
+    """对比量化前后的模型质量"""
+    dataset = load_dataset(
+        "cais/mmlu", "all", split="test", trust_remote_code=True
+    )
+    samples = random.sample(range(len(dataset)), min(num_samples, len(dataset)))
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    import torch
+
+    results = {}
+    for name in [model_name, quantized_model_name]:
+        tokenizer = AutoTokenizer.from_pretrained(name)
+        model = AutoModelForCausalLM.from_pretrained(
+            name, torch_dtype=torch.float16, device_map="auto"
+        )
+
+        total_loss = 0
+        count = 0
+        model.eval()
+
+        with torch.no_grad():
+            for i in samples[:20]:  # 取样评估
+                text = dataset[i]["question"] + " " + dataset[i]["choices"][0]
+                inputs = tokenizer(
+                    text, return_tensors="pt",
+                    truncation=True, max_length=512
+                ).to(model.device)
+                outputs = model(**inputs, labels=inputs["input_ids"])
+                total_loss += outputs.loss.item()
+                count += 1
+
+        avg_ppl = 2 ** (total_loss / count)
+        results[name] = avg_ppl
+        print("%s: Perplexity = %.2f" % (name, avg_ppl))
+
+    original_ppl = results[model_name]
+    quantized_ppl = results[quantized_model_name]
+    degradation = (quantized_ppl - original_ppl) / original_ppl * 100
+    print("\nPerplexity increase after quantization: %.2f%%" % degradation)
+    if degradation < 5:
+        grade = "excellent"
+    elif degradation < 15:
+        grade = "good"
+    else:
+        grade = "needs attention"
+    print("Quality assessment: %s" % grade)
+
+
+# 评估示例（实际使用时取消注释）
+# evaluate_quantization_quality("Qwen/Qwen2.5-7B-Instruct", "./qwen-7b-gptq-int4")
+```
+
+---
+
+## 附录 C：推理成本估算器
+
+```python
+# === 推理成本估算工具 ===
+def estimate_inference_cost(
+    model_params_billion,
+    quantization="fp16",
+    max_batch_size=32,
+    input_tokens=2048,
+    output_tokens=512,
+    gpu_memory_gb=24,
+):
+    """估算 LLM 推理的显存需求和吞吐量"""
+
+    bits_per_param = {
+        "fp32": 32, "fp16": 16, "bf16": 16,
+        "int8": 8, "int4": 4.5, "gptq-int4": 3.7, "awq-int4": 3.7,
+    }
+    param_bytes = model_params_billion * 1e9 * bits_per_param[quantization] / 8
+
+    # KV Cache 粗略估算
+    kv_cache_gb = param_bytes * max_batch_size * (input_tokens + output_tokens) / 1e9 * 0.1
+
+    total_memory_gb = param_bytes / 1e9 + kv_cache_gb
+
+    print("=" * 60)
+    print("  Inference Cost Estimation Report")
+    print("=" * 60)
+    print("  Model params:     %dB" % model_params_billion)
+    print("  Quantization:     %s" % quantization)
+    print("  Model memory:     %.2f GB" % (param_bytes / 1e9))
+    print("  KV Cache estimate: %.2f GB" % kv_cache_gb)
+    print("  Total GPU memory: %.2f GB" % total_memory_gb)
+    print("  GPU available:    %d GB" % gpu_memory_gb)
+    can_run = total_memory_gb < gpu_memory_gb * 0.95
+    print("  Can run:          %s" % ("YES" if can_run else "NO - insufficient VRAM"))
+    print("  Batch size:       %d" % max_batch_size)
+    print("  Input+Output:     %d tokens" % (input_tokens + output_tokens))
+    print("=" * 60)
+
+    return {
+        "model_memory_gb": param_bytes / 1e9,
+        "kv_cache_gb": kv_cache_gb,
+        "total_memory_gb": total_memory_gb,
+        "can_run": can_run,
+    }
+
+
+# 示例 1: 7B AWQ on 24GB
+estimate_inference_cost(7, "awq-int4", gpu_memory_gb=24)
+
+# 示例 2: 72B GPTQ on 48GB
+estimate_inference_cost(72, "gptq-int4", gpu_memory_gb=48)
+```
+
+---
+
+## 附录 D：凌空篇补充 — SFT 训练技巧进阶
+
+### D.1 多阶段训练策略
+
+```python
+# === 三阶段 SFT 训练策略 ===
+# 模仿 Llama 系列的训练流程
+
+# 阶段一：预训练（Pre-training）— 斗皇之前的积累
+# 大规模无监督数据，学习语言知识
+# 预算：数万 GPU 小时
+
+# 阶段二：监督微调（SFT）— 本卷核心内容
+# 高质量指令-回答对，学习遵循指令
+
+sft_tips = {
+    "数据质量 > 数量": "10000条高质量 > 100000条低质量",
+    "数据多样性": "覆盖不同任务类型、不同长度、不同风格",
+    "训练顺序": "先简单（问答）-> 后复杂（推理）-> 最后融合",
+    "学习率调度": "Warmup 3% -> Cosine Decay -> 终止 LR ~ 0",
+    "Loss 监控": "关注 per-token loss，而非 average loss",
+    "过拟合信号": "验证集 loss 连续上升 500 步 -> 立即停止",
+}
+
+for tip, detail in sft_tips.items():
+    print("[TIP] %s: %s" % (tip, detail))
+
+# 阶段三：对齐训练（Alignment）— 第八卷（斗尊）内容
+# RLHF / DPO / GRPO 等，对齐人类偏好
+```
+
+### D.2 数据配比实验
+
+```python
+# === SFT 数据配比实验框架 ===
+
+data_recipes = {
+    "通用对话模型": {
+        "通用问答": 0.30,
+        "代码生成": 0.15,
+        "数学推理": 0.10,
+        "创意写作": 0.15,
+        "知识问答": 0.15,
+        "安全对齐": 0.05,
+        "多轮对话": 0.10,
+    },
+    "代码专家模型": {
+        "代码生成": 0.40,
+        "代码解释": 0.15,
+        "Bug 修复": 0.15,
+        "算法题解": 0.15,
+        "通用对话": 0.10,
+        "文档生成": 0.05,
+    },
+}
+
+print("Data recipe:")
+for name, recipe in data_recipes.items():
+    print("\n%s:" % name)
+    for task, ratio in recipe.items():
+        bar = "#" * int(ratio * 30)
+        print("  %-12s %s %.0f%%" % (task, bar, ratio * 100))
+
+# 炼丹口诀：
+# "七分药材三分火，数据配比定乾坤。
+#  通用模型求均衡，专家模型偏一方。"
+```
+
+---
+

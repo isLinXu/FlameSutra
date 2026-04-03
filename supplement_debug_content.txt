@@ -1,0 +1,106 @@
+
+### B.4 推理服务反噬（vLLM / TGI 部署）
+
+| 反噬现象 | 症状 | 解决方案 |
+|----------|------|---------|
+| vLLM 启动 OOM | `torch.cuda.OutOfMemoryError` during init | 降低 `--gpu-memory-utilization`（默认0.9→0.85）|
+| vLLM 吞吐量骤降 | P99 延迟突然变高 | 检查 `--max-num-seqs` 是否过高；开启 `--enable-prefix-caching` |
+| TGI 与 PyTorch 版本冲突 | `ImportError: cannot import name` | 使用 TGI Docker 镜像（隔离环境）|
+| vLLM 生成乱码 | 输出无意义字符 | 检查 tokenizer（trust_remote_code=True）；检查量化模型是否匹配 |
+| 批处理超时 | Request timeout in production | 增加 `--max-waiting-tokens`；调小 `max_tokens` |
+| 多卡 vLLM 不均衡 | GPU 0 利用率远高于其他 | 确保 `--tensor-parallel-size` 正确；检查 NVLink 互联 |
+
+```python
+# === vLLM 常见问题诊断脚本 ===
+
+import subprocess, json
+
+def diagnose_vllm():
+    """vLLM 部署健康检查"""
+    print("vLLM 健康诊断：\n")
+
+    # 1. 检查 GPU 状态
+    print("1. GPU 状态：")
+    result = subprocess.run(["nvidia-smi", "--query-gpu=name,memory.used,memory.total,utilization.gpu",
+                             "--format=csv,noheader"], capture_output=True, text=True)
+    for line in result.stdout.strip().split("\n"):
+        print(f"   {line}")
+
+    # 2. 检查端口是否在监听
+    import socket
+    for port in [8000, 8080, 3000]:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(("localhost", port))
+        status = "✅ 在监听" if result == 0 else "❌ 未监听"
+        print(f"   端口 {port}: {status}")
+        sock.close()
+
+    # 3. 测试 API 响应
+    try:
+        import requests
+        resp = requests.get("http://localhost:8000/v1/models", timeout=5)
+        if resp.status_code == 200:
+            models = resp.json()["data"]
+            print(f"\n3. API 状态: ✅ 正常 ({len(models)} 个模型)")
+        else:
+            print(f"\n3. API 状态: ❌ 异常 (HTTP {resp.status_code})")
+    except Exception as e:
+        print(f"\n3. API 状态: ❌ 无法连接 ({e})")
+
+    # 4. 显存碎片检查
+    print("\n4. 推荐检查项：")
+    print("   - nvidia-smi dmon：实时监控 GPU 使用率")
+    print("   - watch -n 1 nvidia-smi：每秒刷新")
+    print("   - curl localhost:8000/health：vLLM 健康检查端点")
+    print("   - curl localhost:8000/metrics：Prometheus 指标")
+
+# diagnose_vllm()
+```
+
+### B.5 模型安全反噬
+
+| 反噬现象 | 症状 | 解决方案 |
+|----------|------|---------|
+| Prompt 注入（越狱） | 用户输入绕过安全限制 | 输入过滤 + 系统提示词防护 + 安全分类器 |
+| 幻觉（Hallucination） | 模型编造不存在的"事实" | RAG 引入真实知识 + 温度调低 + 不确定性表达 |
+| 数据泄漏 | 模型输出训练数据中的敏感信息 | 差分隐私训练 + 去重 + 输出过滤 |
+| 恶意指令 | 模型被诱导生成有害内容 | 内容审核 + 红队测试 + 对齐训练 |
+
+```python
+# === 简单的安全防护层 ===
+
+def basic_safety_filter(user_input: str) -> dict:
+    """
+    基础安全过滤（生产环境建议使用专业安全模型）
+    """
+    # 关键词检测
+    danger_keywords = [
+        "忽略之前的指令", "ignore previous", "forget everything",
+        "你现在是", "pretend you are", "jailbreak",
+    ]
+
+    risk_score = 0
+    for keyword in danger_keywords:
+        if keyword.lower() in user_input.lower():
+            risk_score += 1
+
+    # 注入模式检测
+    injection_patterns = [
+        "[INST]", "</s>", "<|im_start|>",  # 特殊 token 注入
+        "system:", "human:", "assistant:",   # 角色伪装
+        "### Instruction", "### Response",   # 模板注入
+    ]
+    for pattern in injection_patterns:
+        if pattern.lower() in user_input.lower():
+            risk_score += 2
+
+    if risk_score >= 3:
+        return {"safe": False, "reason": "检测到潜在的 prompt 注入", "score": risk_score}
+    elif risk_score >= 1:
+        return {"safe": True, "warning": "输入中包含可疑模式", "score": risk_score}
+    else:
+        return {"safe": True, "score": 0}
+
+# 安全防护口诀：
+# "多层防护胜于单点，输入过滤+模型对齐+输出审核，三道防线缺一不可。"
+```

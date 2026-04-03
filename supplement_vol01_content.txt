@@ -1,0 +1,387 @@
+
+---
+
+## 附录 A：NumPy 进阶修炼手册
+
+> *"NumPy 是你修炼路上最重要的兵器。前方的每一卷功法，都会用到它。这里补充一些进阶招式，让你在未来的战斗中游刃有余。"*
+
+### A.1 广播机制 — 斗气自动对齐
+
+```python
+# === 广播规则：自动对齐不同形状的斗气阵列 ===
+import numpy as np
+
+# 规则 1: 维度不够时，在左侧补 1
+a = np.array([1, 2, 3])        # shape: (3,)
+b = np.array([[10], [20]])     # shape: (2, 1)
+result = a + b
+# a 被扩展为 (1, 3), b 被扩展为 (2, 3)
+print("Broadcasting (3,) + (2,1):")
+print(result)
+# [[11 12 13]
+#  [21 22 23]]
+
+# 规则 2: 大小为 1 的维度自动复制
+# 实际应用：批次数据 + 偏置
+batch_data = np.random.randn(32, 256)  # 32个样本，256维特征
+bias = np.random.randn(256)             # 256维偏置
+output = batch_data + bias              # (32, 256) + (256,) → (32, 256)
+print("\nBatch + Bias shape:", output.shape)  # (32, 256)
+
+# 规则 3: 必须从右往左对齐
+# (3, 4, 5) + (4, 5)   → OK
+# (3, 4, 5) + (3, 5)   → Error! 维度 1 不匹配
+try:
+    np.ones((3, 4, 5)) + np.ones((3, 5))
+except ValueError as e:
+    print("\nBroadcast error:", str(e)[:60])
+
+# === 实用广播技巧 ===
+# 计算每列的均值并广播回去
+data = np.random.randn(100, 10)  # 100个样本，10个特征
+col_mean = data.mean(axis=0)     # 每列均值，shape (10,)
+centered = data - col_mean       # 广播减法，每列减去自己的均值
+print("\nCentered data shape:", centered.shape)
+print("Column means after centering:", centered.mean(axis=0).round(10))
+# [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.] — 均值为零！
+```
+
+### A.2 高级索引与花式索引
+
+```python
+# === 花式索引 — 精准提取修炼数据 ===
+
+# 一维花式索引
+arr = np.arange(20)
+indices = [3, 7, 12, 15, 19]
+print("Fancy index:", arr[indices])  # [ 3  7 12 15 19]
+
+# 二维花式索引
+scores = np.array([
+    [80, 85, 90],  # 学生 0: 数学、英语、物理
+    [92, 78, 88],  # 学生 1
+    [75, 95, 82],  # 学生 2
+    [88, 90, 95],  # 学生 3
+])
+
+# 取第 0, 2, 3 个学生的所有成绩
+print("\nStudents 0,2,3:\n", scores[[0, 2, 3]])
+
+# 取第 0 个学生的数学、第 2 个学生的物理、第 3 个学生的英语
+print("\nMixed selection:", scores[[0, 2, 3], [0, 2, 1]])  # [80 82 90]
+
+# === 布尔索引 — 按条件筛选 ===
+
+# 筛选总分 > 250 的学生
+total = scores.sum(axis=1)
+good_students = scores[total > 250]
+print("\nStudents with total > 250:\n", good_students)
+
+# 组合条件
+math_high = scores[:, 0] > 85  # 数学 > 85
+eng_high = scores[:, 1] > 85   # 英语 > 85
+both = scores[math_high & eng_high]  # 两个条件都满足
+print("\nBoth math and english > 85:\n", both)
+
+# === np.where — 条件赋值 ===
+labels = np.array(["cat", "dog", "cat", "bird", "dog", "cat"])
+# 将 cat 换成 feline
+result = np.where(labels == "cat", "feline", labels)
+print("\nReplaced labels:", result)
+# ['feline' 'dog' 'feline' 'bird' 'dog' 'feline']
+```
+
+### A.3 矩阵运算 — 斗气阵法
+
+```python
+# === 矩阵运算 — 深度学习的核心数学 ===
+
+# 矩阵乘法（最常用的运算！）
+A = np.random.randn(3, 4)  # [3, 4]
+B = np.random.randn(4, 2)  # [4, 2]
+C = A @ B                  # [3, 2] — 矩阵乘法
+print("Matrix multiply (3,4) @ (4,2) -> (3,2):", C.shape)
+
+# 这就是神经网络中全连接层的运算！
+# 输入 x [batch, input_dim] @ 权重 W [input_dim, output_dim] = 输出 y [batch, output_dim]
+
+# 批量矩阵乘法
+batch_A = np.random.randn(10, 3, 4)  # 10 个 [3,4] 矩阵
+batch_B = np.random.randn(10, 4, 2)  # 10 个 [4,2] 矩阵
+batch_C = batch_A @ batch_B            # 10 个 [3,2] 矩阵
+print("Batch matmul (10,3,4) @ (10,4,2) -> (10,3,2):", batch_C.shape)
+# 注意力计算就是这个运算！Q @ K^T
+
+# 特征值分解
+sym_matrix = np.array([[4, 2], [2, 3]])  # 对称矩阵
+eigenvalues, eigenvectors = np.linalg.eigh(sym_matrix)
+print("\nEigenvalues:", eigenvalues)     # [1.38, 5.62]
+print("Eigenvectors:\n", eigenvectors)
+
+# SVD 分解（在深度学习中非常重要！）
+# U, S, V = np.linalg.svd(matrix)
+# 用于：PCA 降维、低秩近似、模型压缩
+matrix = np.random.randn(6, 4)
+U, S, Vt = np.linalg.svd(matrix, full_matrices=False)
+print("\nSVD: U(%s) * diag(S)(%s) * Vt(%s)" % (
+    U.shape, S.shape, Vt.shape))
+# 重建
+reconstructed = U @ np.diag(S) @ Vt
+print("Reconstruction error:", np.max(np.abs(matrix - reconstructed)).round(10))
+```
+
+### A.4 性能优化技巧
+
+```python
+# === NumPy 性能优化 — 让斗气运转更快 ===
+import time
+
+# 技巧 1: 向量化 > 循环
+data = np.random.randn(1000000)
+
+# 慢速：Python 循环
+start = time.time()
+result_slow = np.zeros(1000000)
+for i in range(1000000):
+    result_slow[i] = data[i] * 2 + 1
+loop_time = time.time() - start
+
+# 快速：向量化
+start = time.time()
+result_fast = data * 2 + 1
+vec_time = time.time() - start
+
+print("Loop time: %.4fs" % loop_time)
+print("Vectorized time: %.6fs" % vec_time)
+print("Speedup: %.0fx" % (loop_time / vec_time))
+# 通常 100-1000x 加速！
+
+# 技巧 2: 避免 append，预分配数组
+# 慢速：不断 append
+start = time.time()
+slow_list = []
+for i in range(100000):
+    slow_list.append(i * 2)
+slow_arr = np.array(slow_list)
+slow_time = time.time() - start
+
+# 快速：预分配
+start = time.time()
+fast_arr = np.arange(100000) * 2
+fast_time = time.time() - start
+print("\nAppend time: %.4fs, Prealloc time: %.6fs" % (slow_time, fast_time))
+
+# 技巧 3: 布尔掩码代替条件循环
+data = np.random.randn(100000)
+threshold = 0.5
+
+# 慢速
+start = time.time()
+result = np.where(data > threshold, data * 2, data / 2)
+fast_where = time.time() - start
+
+print("\nnp.where for conditional ops: %.6fs" % fast_where)
+
+# 技巧 4: 使用 einsum 表示复杂张量运算
+A = np.random.randn(3, 4)
+B = np.random.randn(4, 5)
+C = np.random.randn(5, 3)
+
+# 三种等价写法
+result1 = A @ B @ C                     # 链式乘法
+result2 = np.matmul(np.matmul(A, B), C)  # matmul
+result3 = np.einsum('ij,jk,kl->il', A, B, C)  # einsum
+
+print("\nAll methods produce same result:", np.allclose(result1, result3))
+
+# einsum 的优势：可以表达任意的张量缩并
+# 例如：batch 矩阵乘法、转置、求迹、逐元素乘法等
+# 公式: 'bn,bn->b' = 逐样本内积（余弦相似度的分子）
+```
+
+---
+
+## 附录 B：Matplotlib 可视化 — 斗气波动图
+
+> *"修炼数据如同炼丹，不画图看一看，怎么知道丹成了没有？Matplotlib 是你的透视之眼。"*
+
+### B.1 训练曲线可视化
+
+```python
+# === 训练 Loss 曲线 — 最常用的可视化 ===
+import matplotlib.pyplot as plt
+import numpy as np
+
+# 模拟训练数据
+epochs = np.arange(1, 51)
+train_loss = 2.5 * np.exp(-0.08 * epochs) + 0.3 + np.random.randn(50) * 0.05
+val_loss = 2.5 * np.exp(-0.06 * epochs) + 0.5 + np.random.randn(50) * 0.08
+train_acc = 1 - np.exp(-0.1 * epochs) + np.random.randn(50) * 0.02
+val_acc = 1 - np.exp(-0.07 * epochs) + np.random.randn(50) * 0.03
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# 左图：Loss 曲线
+axes[0].plot(epochs, train_loss, 'b-', label='Train Loss', linewidth=2)
+axes[0].plot(epochs, val_loss, 'r-', label='Val Loss', linewidth=2)
+axes[0].set_xlabel('Epoch', fontsize=12)
+axes[0].set_ylabel('Loss', fontsize=12)
+axes[0].set_title('Training & Validation Loss', fontsize=14)
+axes[0].legend(fontsize=11)
+axes[0].grid(True, alpha=0.3)
+axes[0].axvline(x=epochs[np.argmin(val_loss)], color='g', linestyle='--',
+                label='Best Epoch')
+axes[0].legend(fontsize=11)
+
+# 右图：Accuracy 曲线
+axes[1].plot(epochs, train_acc * 100, 'b-', label='Train Acc', linewidth=2)
+axes[1].plot(epochs, val_acc * 100, 'r-', label='Val Acc', linewidth=2)
+axes[1].set_xlabel('Epoch', fontsize=12)
+axes[1].set_ylabel('Accuracy (%)', fontsize=12)
+axes[1].set_title('Training & Validation Accuracy', fontsize=14)
+axes[1].legend(fontsize=11)
+axes[1].grid(True, alpha=0.3)
+axes[1].set_ylim([0, 105])
+
+plt.tight_layout()
+plt.savefig('training_curves.png', dpi=150, bbox_inches='tight')
+print("Training curves saved to training_curves.png")
+```
+
+### B.2 模型参数分布可视化
+
+```python
+# === 权重分布 — 检查模型健康状况 ===
+
+# 模拟不同层的权重分布
+np.random.seed(42)
+layer_names = ['Embedding', 'Attention.W_q', 'Attention.W_v', 'FFN.W1', 'FFN.W2', 'Output']
+weight_distributions = [
+    np.random.randn(10000) * 0.02,      # Embedding
+    np.random.randn(10000) * 0.03,      # W_q
+    np.random.randn(10000) * 0.04,      # W_v
+    np.random.randn(10000) * 0.02 / np.sqrt(512),  # W1 (Xavier)
+    np.random.randn(10000) * 0.02 / np.sqrt(512),  # W2
+    np.random.randn(10000) * 0.01,      # Output
+]
+
+fig, axes = plt.subplots(2, 3, figsize=(16, 8))
+axes = axes.flatten()
+
+for i, (name, weights) in enumerate(zip(layer_names, weight_distributions)):
+    axes[i].hist(weights, bins=100, density=True, alpha=0.7, color='steelblue')
+    axes[i].set_title(name, fontsize=12)
+    axes[i].set_xlabel('Weight Value', fontsize=10)
+    axes[i].set_ylabel('Density', fontsize=10)
+    axes[i].axvline(x=0, color='red', linestyle='--', alpha=0.5)
+    
+    # 添加统计信息
+    stats_text = 'mean=%.4f\nstd=%.4f' % (weights.mean(), weights.std())
+    axes[i].text(0.95, 0.95, stats_text, transform=axes[i].transAxes,
+                 fontsize=9, verticalalignment='top', horizontalalignment='right',
+                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
+plt.suptitle('Model Weight Distributions by Layer', fontsize=16, y=1.02)
+plt.tight_layout()
+plt.savefig('weight_distributions.png', dpi=150, bbox_inches='tight')
+print("Weight distributions saved to weight_distributions.png")
+```
+
+### B.3 注意力热力图
+
+```python
+# === 注意力权重可视化 — 看看模型关注什么 ===
+
+tokens = ["我", "喜欢", "深度", "学习", "，", "因为", "它", "很", "有趣"]
+# 模拟一个 9x9 的注意力矩阵（自注意力）
+np.random.seed(42)
+attn_weights = np.random.dirichlet(np.ones(9), size=9)
+
+# 增加一些有意义的模式（"深度"关注"学习"，"它"关注"学习"）
+attn_weights[2, 3] += 2.0  # "深度" → "学习"
+attn_weights[6, 3] += 1.5  # "它" → "学习"
+attn_weights[0, 0] += 1.0  # "我" → 自身
+
+# 归一化
+attn_weights = attn_weights / attn_weights.sum(axis=1, keepdims=True)
+
+fig, ax = plt.subplots(figsize=(10, 8))
+im = ax.imshow(attn_weights, cmap='YlOrRd', aspect='auto')
+
+# 设置标签
+ax.set_xticks(range(len(tokens)))
+ax.set_yticks(range(len(tokens)))
+ax.set_xticklabels(tokens, fontsize=12, rotation=45, ha='right')
+ax.set_yticklabels(tokens, fontsize=12)
+
+# 添加数值标注
+for i in range(len(tokens)):
+    for j in range(len(tokens)):
+        val = attn_weights[i, j]
+        color = 'white' if val > 0.15 else 'black'
+        ax.text(j, i, '%.2f' % val, ha='center', va='center',
+                fontsize=9, color=color)
+
+ax.set_xlabel('Key Position', fontsize=13)
+ax.set_ylabel('Query Position', fontsize=13)
+ax.set_title('Self-Attention Weights Heatmap', fontsize=15)
+plt.colorbar(im, ax=ax, shrink=0.8, label='Attention Weight')
+plt.tight_layout()
+plt.savefig('attention_heatmap.png', dpi=150, bbox_inches='tight')
+print("Attention heatmap saved to attention_heatmap.png")
+```
+
+### B.4 学习率调度可视化
+
+```python
+# === 学习率调度策略对比 ===
+
+def cosine_schedule(epoch, total_epochs, lr_max=1e-3, lr_min=1e-5, warmup_epochs=5):
+    """Cosine Annealing with Warmup"""
+    if epoch < warmup_epochs:
+        return lr_max * (epoch + 1) / warmup_epochs
+    progress = (epoch - warmup_epochs) / (total_epochs - warmup_epochs)
+    return lr_min + 0.5 * (lr_max - lr_min) * (1 + np.cos(np.pi * progress))
+
+def linear_schedule(epoch, total_epochs, lr_max=1e-3, warmup_epochs=5):
+    """Linear Decay with Warmup"""
+    if epoch < warmup_epochs:
+        return lr_max * (epoch + 1) / warmup_epochs
+    return lr_max * (1 - (epoch - warmup_epochs) / (total_epochs - warmup_epochs))
+
+def exponential_schedule(epoch, total_epochs, lr_max=1e-3, warmup_epochs=5, decay_rate=0.99):
+    """Exponential Decay with Warmup"""
+    if epoch < warmup_epochs:
+        return lr_max * (epoch + 1) / warmup_epochs
+    return lr_max * (decay_rate ** (epoch - warmup_epochs))
+
+total_epochs = 100
+epochs = np.arange(total_epochs)
+cosine_lrs = [cosine_schedule(e, total_epochs) for e in epochs]
+linear_lrs = [linear_schedule(e, total_epochs) for e in epochs]
+exp_lrs = [exponential_schedule(e, total_epochs) for e in epochs]
+
+fig, ax = plt.subplots(figsize=(12, 6))
+ax.plot(epochs, cosine_lrs, 'b-', linewidth=2.5, label='Cosine Annealing')
+ax.plot(epochs, linear_lrs, 'r--', linewidth=2, label='Linear Decay')
+ax.plot(epochs, exp_lrs, 'g-.', linewidth=2, label='Exponential Decay')
+ax.axvline(x=5, color='gray', linestyle=':', alpha=0.7, label='Warmup End')
+
+ax.fill_between(epochs[:5], 0, cosine_lrs[:5], alpha=0.1, color='blue')
+ax.annotate('Warmup\nPhase', xy=(2.5, 5e-4), fontsize=11, ha='center', color='blue')
+
+ax.set_xlabel('Epoch', fontsize=13)
+ax.set_ylabel('Learning Rate', fontsize=13)
+ax.set_title('Learning Rate Schedule Comparison', fontsize=15)
+ax.legend(fontsize=11)
+ax.grid(True, alpha=0.3)
+ax.set_xlim([0, total_epochs])
+ax.set_ylim([0, max(cosine_lrs) * 1.1])
+
+plt.tight_layout()
+plt.savefig('lr_schedules.png', dpi=150, bbox_inches='tight')
+print("LR schedules saved to lr_schedules.png")
+```
+
+---
+
